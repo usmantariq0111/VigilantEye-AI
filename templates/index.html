@@ -17,36 +17,58 @@
 <nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container-fluid">
     <a class="navbar-brand" href="{{ url_for('home') }}">
-      <i class="bi bi-shield-check"></i> VigilantEye
+      <i class="bi bi-shield-check"></i>
+      <span>VigilantEye</span>
     </a>
-    <div class="ms-auto d-flex align-items-center gap-3">
+    <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-2">
       <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Switch Theme">
         <i class="bi bi-moon-fill"></i>
       </button>
-      <a href="{{ url_for('about') }}" class="btn btn-outline-info btn-sm">
-        <i class="bi bi-info-circle"></i> About
+      <a href="{{ url_for('about') }}" class="nav-link-btn" title="About">
+        <i class="bi bi-info-circle"></i>
+        <span class="d-none d-md-inline">About</span>
       </a>
       {% if session.get('username') %}
-        <span class="d-flex align-items-center gap-2" style="color: var(--text-primary);">
-          <i class="bi bi-person-circle"></i> {{ session['username'] }}
-        </span>
-        <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
-          <i class="bi bi-box-arrow-right"></i> Logout
-        </a>
+        <div class="user-menu">
+          <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu()">
+            <i class="bi bi-person-circle"></i>
+            <span class="d-none d-md-inline">{{ session['username'] }}</span>
+            <i class="bi bi-chevron-down ms-1"></i>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-dropdown-header">
+              <i class="bi bi-person-circle"></i>
+              <div>
+                <strong>{{ session['username'] }}</strong>
+                <small>Logged in</small>
+              </div>
+            </div>
+            <div class="user-dropdown-divider"></div>
+            <a href="{{ url_for('logout') }}" class="user-dropdown-item">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Logout</span>
+            </a>
+          </div>
+        </div>
       {% else %}
-        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm">
-          <i class="bi bi-box-arrow-in-right"></i> Login
+        <a href="{{ url_for('login') }}" class="nav-link-btn">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <span class="d-none d-md-inline">Login</span>
         </a>
-        <a href="{{ url_for('signup') }}" class="btn btn-outline-info btn-sm">
-          <i class="bi bi-person-plus"></i> Sign Up
+        <a href="{{ url_for('signup') }}" class="nav-link-btn nav-link-btn-primary">
+          <i class="bi bi-person-plus"></i>
+          <span class="d-none d-md-inline">Sign Up</span>
         </a>
       {% endif %}
     </div>
   </div>
 </nav>
 
-<div class="container">
-  <div class="card">
+<div class="container-fluid px-3 px-md-4">
+  <div class="row g-4">
+    <!-- Main Content Area -->
+    <div class="col-lg-8 col-xl-9">
+      <div class="card position-relative main-scan-card">
     <div class="text-center mb-4">
       <h1 class="logo">
         <i class="bi bi-shield-check"></i> VigilantEye
@@ -56,11 +78,15 @@
     </div>
 
     <form method="POST" enctype="multipart/form-data" id="uploadForm">
-      <div class="upload-area" onclick="document.querySelector('input[type=file]').click()">
+      <div class="upload-area" 
+           onclick="document.querySelector('input[type=file]').click()"
+           ondrop="handleDrop(event)" 
+           ondragover="handleDragOver(event)" 
+           ondragleave="handleDragLeave(event)">
         <div class="upload-icon">
           <i class="bi bi-cloud-upload"></i>
         </div>
-        <h5 class="text-white mb-3">Drag & Drop or Click to Upload</h5>
+        <h5 style="color: var(--text-primary);" class="mb-3">Drag & Drop or Click to Upload</h5>
         <p style="color: var(--text-secondary);" class="mb-3">Supported format: .gif files only</p>
         <input type="file" class="form-control d-none" name="gif_file" accept=".gif" required id="fileInput" onchange="updateFileName(this)">
         <div id="fileName" class="text-primary mt-2"></div>
@@ -71,7 +97,8 @@
     </form>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-wrapper">
+      <div id="loadingOverlay" class="loading-overlay">
       <div class="loading-container">
         <div class="shield-loader">
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -107,6 +134,7 @@
           <div class="loading-progress-bar"></div>
         </div>
       </div>
+    </div>
     </div>
 
     {% if result %}
@@ -164,46 +192,72 @@
       {% endif %}
     </div>
     {% endif %}
-
-    {% if history %}
-    <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
-      <h4 class="mb-0">
-        <i class="bi bi-clock-history"></i> Scan History
-      </h4>
-      <a href="{{ url_for('download_report') }}" class="btn btn-warning">
-        <i class="bi bi-download"></i> Download Report (CSV)
-      </a>
+      </div>
     </div>
 
-    <div class="history-container">
-      {% for entry in history %}
-      <div class="history-entry">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <div>
-            <h6 class="mb-1">
-              <i class="bi bi-file-earmark-image"></i> 
-              <code>{{ entry.file_name }}</code>
-            </h6>
-            <div class="d-flex gap-2 flex-wrap mt-2">
-              <span class="status-badge {% if entry.status == 'infected' %}infected{% elif entry.status == 'clean' %}clean{% else %}warning{% endif %}">
-                {{ entry.status.upper() }}
-              </span>
-              <span class="method-badge">{{ entry.method }}</span>
+    <!-- History Sidebar -->
+    <div class="col-lg-4 col-xl-3">
+      <div class="card history-sidebar sticky-top">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0" style="color: var(--text-primary);">
+            <i class="bi bi-clock-history"></i> Scan History
+          </h5>
+          <button class="btn btn-sm btn-outline-info d-lg-none" id="toggleHistory" onclick="toggleHistorySidebar()" title="Toggle History">
+            <i class="bi bi-list" id="toggleHistoryIcon"></i>
+          </button>
+        </div>
+
+        {% if history %}
+        <div class="history-sidebar-content" id="historyContent">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <small style="color: var(--text-secondary);">{{ history|length }} scan(s)</small>
+            <a href="{{ url_for('download_report') }}" class="btn btn-sm btn-warning" title="Download CSV Report">
+              <i class="bi bi-download"></i>
+            </a>
+          </div>
+
+          <div class="history-list">
+            {% for entry in history %}
+            <div class="history-item {% if entry.status == 'infected' %}infected-item{% elif entry.status == 'clean' %}clean-item{% endif %}">
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <div class="history-status-icon">
+                  <i class="bi bi-{% if entry.status == 'infected' %}exclamation-triangle-fill text-danger{% elif entry.status == 'clean' %}check-circle-fill text-success{% else %}exclamation-circle-fill text-warning{% endif %}"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <code class="history-filename">{{ entry.file_name }}</code>
+                    <span class="status-badge-small {% if entry.status == 'infected' %}infected{% elif entry.status == 'clean' %}clean{% else %}warning{% endif %}">
+                      {{ entry.status.upper() }}
+                    </span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <small style="color: var(--text-secondary);">
+                      <i class="bi bi-tag"></i> {{ entry.method }}
+                    </small>
+                  </div>
+                  {% if entry.payload %}
+                  <details class="history-details">
+                    <summary style="cursor: pointer; color: var(--primary-color); font-size: 0.85rem;">
+                      <i class="bi bi-chevron-down"></i> View Payload
+                    </summary>
+                    <pre class="history-payload">{{ entry.payload }}</pre>
+                  </details>
+                  {% endif %}
+                </div>
+              </div>
             </div>
+            {% endfor %}
           </div>
         </div>
-        {% if entry.payload %}
-        <details class="mt-3">
-          <summary class="text-primary cursor-pointer" style="cursor: pointer;">
-            <i class="bi bi-chevron-down"></i> View Payload Details
-          </summary>
-          <pre class="p-3 rounded mt-2" style="background: var(--bg-overlay);">{{ entry.payload }}</pre>
-        </details>
+        {% else %}
+        <div class="history-empty text-center py-4">
+          <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5;"></i>
+          <p style="color: var(--text-secondary);" class="mt-3 mb-0">No scan history yet</p>
+          <small style="color: var(--text-tertiary);">Scan files to see history here</small>
+        </div>
         {% endif %}
       </div>
-      {% endfor %}
     </div>
-    {% endif %}
   </div>
 </div>
 
@@ -245,6 +299,107 @@
       loadingOverlay.classList.remove('show');
     }
   });
+
+  // Toggle history sidebar on mobile
+  function toggleHistorySidebar() {
+    const sidebar = document.querySelector('.history-sidebar');
+    const content = document.getElementById('historyContent');
+    const icon = document.getElementById('toggleHistoryIcon');
+    
+    if (sidebar && content) {
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      
+      if (isCollapsed) {
+        sidebar.classList.remove('collapsed');
+        content.style.display = 'block';
+        icon.classList.remove('bi-list');
+        icon.classList.add('bi-x');
+      } else {
+        sidebar.classList.add('collapsed');
+        content.style.display = 'none';
+        icon.classList.remove('bi-x');
+        icon.classList.add('bi-list');
+      }
+    }
+  }
+
+  // Auto-collapse sidebar on mobile by default
+  window.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth < 992) {
+      const sidebar = document.querySelector('.history-sidebar');
+      const content = document.getElementById('historyContent');
+      if (sidebar && content) {
+        sidebar.classList.add('collapsed');
+        content.style.display = 'none';
+      }
+    }
+  });
+
+  // Handle window resize
+  window.addEventListener('resize', function() {
+    const sidebar = document.querySelector('.history-sidebar');
+    const content = document.getElementById('historyContent');
+    const icon = document.getElementById('toggleHistoryIcon');
+    
+    if (window.innerWidth >= 992) {
+      // Desktop - always show
+      if (sidebar && content) {
+        sidebar.classList.remove('collapsed');
+        content.style.display = 'block';
+        icon.classList.remove('bi-x');
+        icon.classList.add('bi-list');
+      }
+    }
+  });
+
+  // User Menu Toggle
+  function toggleUserMenu() {
+    const dropdown = document.getElementById('userDropdown');
+    const btn = document.getElementById('userMenuBtn');
+    
+    if (dropdown && btn) {
+      dropdown.classList.toggle('show');
+      btn.classList.toggle('active');
+    }
+  }
+
+  // Close user menu when clicking outside
+  document.addEventListener('click', function(event) {
+    const userMenu = document.querySelector('.user-menu');
+    const dropdown = document.getElementById('userDropdown');
+    const btn = document.getElementById('userMenuBtn');
+    
+    if (userMenu && dropdown && btn && !userMenu.contains(event.target)) {
+      dropdown.classList.remove('show');
+      btn.classList.remove('active');
+    }
+  });
+
+  // Drag and Drop Handlers
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.add('dragover');
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('dragover');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.endsWith('.gif')) {
+      const fileInput = document.getElementById('fileInput');
+      fileInput.files = files;
+      updateFileName(fileInput);
+    }
+  }
 </script>
 
 </body>
