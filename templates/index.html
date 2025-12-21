@@ -3,155 +3,191 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GIF Malware Detection</title>
+  <title>VigilantEye - Malware Detection</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="alternate icon" href="{{ url_for('static', filename='favicon.svg') }}">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-      color: #fff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .container {
-      max-width: 700px;
-      margin-top: 80px;
-      background-color: #ffffff10;
-      border-radius: 16px;
-      padding: 30px;       
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
-    }
-    .form-control, .btn {
-      border-radius: 12px;
-    }
-    .btn-primary {
-      background-color: #17a2b8;
-      border: none;
-    }
-    .btn-primary:hover {
-      background-color: #138496;
-    }
-    .logo {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .logo h1 {
-      font-size: 32px;
-      font-weight: bold;
-      margin: 0;
-      color: #ffffff;
-    }
-    .result-box {
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 25px;
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .status-text {
-      font-size: 20px;
-    }
-    .footer {
-      margin-top: 80px;
-      font-size: 14px;
-      text-align: center;
-      opacity: 0.7;
-    }
-    .history-entry {
-      background-color: #ffffff1a;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-    code {
-      background-color: #333;
-      padding: 2px 4px;
-      border-radius: 5px;
-    }
-  </style>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-transparent px-4">
-  <a class="navbar-brand" href="{{ url_for('home') }}">🛡️ VigilantEye</a>
-  <div class="ms-auto">
-    <a href="{{ url_for('about') }}" class="btn btn-outline-info btn-sm me-2">About</a>
-    {% if session['username'] %}
-      <span class="text-white me-3">👤 {{ session['username'] }}</span>
-      <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
-    {% else %}
-      <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2">Login</a>
-      <a href="{{ url_for('signup') }}" class="btn btn-outline-info btn-sm">Sign Up</a>
-    {% endif %}
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('home') }}">
+      <i class="bi bi-shield-check"></i> VigilantEye
+    </a>
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Switch Theme">
+        <i class="bi bi-moon-fill"></i>
+      </button>
+      <a href="{{ url_for('about') }}" class="btn btn-outline-info btn-sm">
+        <i class="bi bi-info-circle"></i> About
+      </a>
+      {% if session.get('username') %}
+        <span class="d-flex align-items-center gap-2" style="color: var(--text-primary);">
+          <i class="bi bi-person-circle"></i> {{ session['username'] }}
+        </span>
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-box-arrow-in-right"></i> Login
+        </a>
+        <a href="{{ url_for('signup') }}" class="btn btn-outline-info btn-sm">
+          <i class="bi bi-person-plus"></i> Sign Up
+        </a>
+      {% endif %}
+    </div>
   </div>
 </nav>
 
 <div class="container">
-  <div class="logo">
-    <h1>🛡️ VigilantEye → GIF Malware Detector</h1>
-    <p class="text-white-50">Upload your .gif file and detect malicious behavior</p>
-  </div>
-
-  <form method="POST" enctype="multipart/form-data">
-    <div class="mb-3">
-      <input type="file" class="form-control" name="gif_file" accept=".gif" required>
-    </div>
-    <button type="submit" class="btn btn-primary w-100">Scan GIF</button>
-  </form>
-
-  {% if result %}
-  <div class="result-box mt-4 {% if result[0] == 'infected' %}bg-danger{% else %}bg-success{% endif %} text-white">
-    
-    <h5>🔍 Result for: <code>{{ file_name }}</code></h5>
-
-    <!-- GIF Preview -->
-    <div class="text-center my-3">
-      <img src="{{ url_for('static', filename='uploads/' + file_name) }}" 
-           alt="Scanned GIF"
-           class="img-fluid rounded"
-           style="max-height: 250px;">
+  <div class="card">
+    <div class="text-center mb-4">
+      <h1 class="logo">
+        <i class="bi bi-shield-check"></i> VigilantEye
+      </h1>
+      <p style="color: var(--text-secondary);" class="fs-5">Advanced AI-Powered GIF Malware Detection</p>
+      <p style="color: var(--text-secondary);">Upload your GIF file to scan for hidden threats and malicious payloads</p>
     </div>
 
-    <p class="status-text"><strong>Status:</strong> {{ result[0].upper() }}</p>
-    <p class="status-text"><strong>Detected Method:</strong> {{ result[1] }}</p>
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+      <div class="upload-area" onclick="document.querySelector('input[type=file]').click()">
+        <div class="upload-icon">
+          <i class="bi bi-cloud-upload"></i>
+        </div>
+        <h5 class="text-white mb-3">Drag & Drop or Click to Upload</h5>
+        <p style="color: var(--text-secondary);" class="mb-3">Supported format: .gif files only</p>
+        <input type="file" class="form-control d-none" name="gif_file" accept=".gif" required id="fileInput" onchange="updateFileName(this)">
+        <div id="fileName" class="text-primary mt-2"></div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-4" id="scanBtn">
+        <i class="bi bi-search"></i> Scan for Malware
+      </button>
+    </form>
 
-    <!-- Confidence Bars -->
+    {% if result %}
+    <div class="result-box mt-4 {% if result[0] == 'infected' %}bg-danger{% else %}bg-success{% endif %}">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h4 class="mb-0">
+          <i class="bi bi-{% if result[0] == 'infected' %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+          Scan Result
+        </h4>
+        <span class="status-badge {% if result[0] == 'infected' %}infected{% else %}clean{% endif %}">
+          {{ result[0].upper() }}
+        </span>
+      </div>
 
+      <div class="mb-3">
+        <strong style="color: var(--text-secondary);">File:</strong>
+        <code class="ms-2">{{ file_name }}</code>
+      </div>
 
+      {% if file_name %}
+      <div class="text-center my-4 gif-preview">
+        <img src="{{ url_for('static', filename='uploads/' + file_name) }}" 
+             alt="Scanned GIF"
+             class="img-fluid rounded"
+             style="max-height: 300px;">
+      </div>
+      {% endif %}
 
-    <p class="status-text"><strong>Extracted Payload:</strong></p>
-    <pre class="bg-dark p-2 rounded">{{ payload }}</pre>
+      <div class="row g-3 mt-3">
+        <div class="col-md-6">
+          <div class="p-3 rounded" style="background: var(--bg-overlay);">
+            <small style="color: var(--text-secondary);" class="d-block mb-1">Detection Method</small>
+            <strong class="d-block">
+              <span class="method-badge">{{ result[1] }}</span>
+            </strong>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="p-3 rounded" style="background: var(--bg-overlay);">
+            <small style="color: var(--text-secondary);" class="d-block mb-1">Status</small>
+            <strong class="d-block" style="color: {% if result[0] == 'infected' %}var(--danger-color){% else %}var(--success-color){% endif %};">
+              {{ result[0].upper() }}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {% if payload %}
+      <div class="mt-4">
+        <h6 class="mb-2">
+          <i class="bi bi-code-slash"></i> Extracted Payload:
+        </h6>
+        <pre class="p-3 rounded" style="background: var(--bg-overlay);">{{ payload }}</pre>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if history %}
+    <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+      <h4 class="mb-0">
+        <i class="bi bi-clock-history"></i> Scan History
+      </h4>
+      <a href="{{ url_for('download_report') }}" class="btn btn-warning">
+        <i class="bi bi-download"></i> Download Report (CSV)
+      </a>
+    </div>
+
+    <div class="history-container">
+      {% for entry in history %}
+      <div class="history-entry">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <h6 class="mb-1">
+              <i class="bi bi-file-earmark-image"></i> 
+              <code>{{ entry.file_name }}</code>
+            </h6>
+            <div class="d-flex gap-2 flex-wrap mt-2">
+              <span class="status-badge {% if entry.status == 'infected' %}infected{% else %}clean{% endif %}">
+                {{ entry.status.upper() }}
+              </span>
+              <span class="method-badge">{{ entry.method }}</span>
+            </div>
+          </div>
+        </div>
+        {% if entry.payload %}
+        <details class="mt-3">
+          <summary class="text-primary cursor-pointer" style="cursor: pointer;">
+            <i class="bi bi-chevron-down"></i> View Payload Details
+          </summary>
+          <pre class="p-3 rounded mt-2" style="background: var(--bg-overlay);">{{ entry.payload }}</pre>
+        </details>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
-
-  {% if history %}
-  <div class="text-end mt-4">
-    <a href="{{ url_for('download_report') }}" class="btn btn-warning">
-      ⬇️ Download Report (CSV)
-    </a>
-  </div>
-
-  <h4 class="mt-5">📝 Scan History</h4>
-  {% for entry in history %}
-  <div class="history-entry">
-    <p><strong>File:</strong> <code>{{ entry.file_name }}</code></p>
-    <p><strong>Status:</strong> {{ entry.status }}</p>
-    <p><strong>Method:</strong> {{ entry.method }}</p>
-
-    <details>
-      <summary>View Payload</summary>
-      <pre class="bg-dark p-2 rounded mt-2">{{ entry.payload }}</pre>
-    </details>
-  </div>
-  {% endfor %}
-  {% endif %}
 </div>
 
-<div class="footer text-white">
-  <p>&copy; 2025 GIF Malware Detection | Built with Flask & PyTorch</p>
+<div class="footer">
+  <p>&copy; 2025 VigilantEye | AI-Powered Malware Detection | Built with Flask & PyTorch</p>
 </div>
+
+<script>
+  function updateFileName(input) {
+    const fileName = input.files[0]?.name;
+    const fileNameDiv = document.getElementById('fileName');
+    if (fileName) {
+      fileNameDiv.innerHTML = `<i class="bi bi-file-earmark-check"></i> Selected: <strong>${fileName}</strong>`;
+      fileNameDiv.style.color = 'var(--success-color)';
+    }
+  }
+
+  document.getElementById('uploadForm').addEventListener('submit', function() {
+    const btn = document.getElementById('scanBtn');
+    btn.innerHTML = '<span class="loading-spinner"></span> Scanning...';
+    btn.disabled = true;
+  });
+</script>
 
 </body>
 </html>
