@@ -1537,3 +1537,99 @@ details summary:hover {
 [data-theme="light"] .shield-loader .eye-circle {
   fill: var(--primary-color);
 }
+
+/* Model Selection Cards */
+.model-selection {
+  padding: 1.5rem;
+  background: var(--bg-overlay);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.model-card {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 2px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease;
+  background: var(--bg-card) !important;
+  overflow: hidden;
+}
+
+.model-card:hover {
+  border-color: var(--primary-color) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-primary);
+}
+
+.btn-check:checked + .model-card {
+  border-color: var(--primary-color) !important;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 44, 191, 0.1)) !important;
+  box-shadow: 0 0 20px var(--shadow-primary);
+}
+
+.model-card-content {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.model-icon {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.model-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.model-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.model-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.btn-check:checked + .model-card .model-badge {
+  background: var(--primary-color);
+  color: var(--text-inverse);
+  border-color: var(--primary-color);
+}
+
+.model-badge-result {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+[data-theme="light"] .model-card {
+  background: var(--bg-card) !important;
+}
+
+[data-theme="light"] .model-selection {
+  background: var(--bg-overlay);
+}

@@ -114,6 +114,10 @@ import csv
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from test_model import predict_gif
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "super-secret-key"
@@ -239,16 +243,21 @@ def index():
 
     if request.method == "POST":
         file = request.files.get("gif_file")
+        model_type = request.form.get("model_type", "cnn")  # Default to CNN if not specified
+        
         if file and file.filename.endswith(".gif"):
             filename = secure_filename(file.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
 
-            prediction = predict_gif(file_path)
+            # Get API key from environment if using advanced analysis model
+            gemini_api_key = os.getenv("GEMINI_API_KEY") if model_type == "llm" else None
+            prediction = predict_gif(file_path, model_type=model_type, gemini_api_key=gemini_api_key)
             result = (
                 prediction["prediction"],
                 prediction["model_method"],
-                prediction["payload_detected"]
+                prediction["payload_detected"],
+                model_type  # Add model type to result
             )
             file_name = filename
             extracted_payload = prediction["extracted_payload"]
@@ -257,7 +266,8 @@ def index():
                 "file_name": file_name,
                 "status": result[0],
                 "method": result[1],
-                "payload": extracted_payload
+                "payload": extracted_payload,
+                "model_type": model_type
             })
 
     return render_template(
