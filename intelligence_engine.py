@@ -21,103 +21,277 @@ except ImportError:
     ENGINE_AVAILABLE = False
 
 
+def _extract_json_object(text, start_idx):
+    """Extract a complete JSON object from text starting at start_idx."""
+    brace_count = 0
+    in_string = False
+    escape_next = False
+    
+    for i in range(start_idx, len(text)):
+        char = text[i]
+        
+        if escape_next:
+            escape_next = False
+            continue
+        
+        if char == '\\':
+            escape_next = True
+            continue
+        
+        if char == '"' and not escape_next:
+            in_string = not in_string
+            continue
+        
+        if not in_string:
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    return text[start_idx:i+1]
+    
+    return None
+
+
+def _fix_json_string(json_str):
+    """Try to fix common JSON formatting issues."""
+    # Remove trailing commas before closing braces/brackets
+    json_str = re.sub(r',\s*}', '}', json_str)
+    json_str = re.sub(r',\s*]', ']', json_str)
+    # Try to close unclosed strings
+    if json_str.count('"') % 2 != 0:
+        json_str += '"'
+    return json_str
+
+
 def extract_payload(content: bytes):
     """
-    Extract potential malicious payloads from GIF file.
-    Focuses on appended data and actual code, not normal GIF structure.
+    Comprehensive payload extraction from GIF file.
+    Scans the ENTIRE file including headers, metadata, comments, and appended data.
+    Does not skip any section of the file.
     """
     findings = []
-    content_str = content.decode(errors='ignore', encoding='latin-1')  # Use latin-1 to preserve all bytes
-
-    # Find GIF terminator (0x00 0x3B) - data after this is suspicious
+    file_size = len(content)
+    
+    # Decode entire file content for text analysis (preserve all bytes)
+    content_str = content.decode(errors='ignore', encoding='latin-1')
+    
+    # === 1. SCAN APPENDED DATA (after GIF terminator) ===
     gif_terminator = b'\x00\x3B'
     terminator_pos = content.rfind(gif_terminator)
     
-    # Focus analysis on appended data (after GIF terminator) and metadata areas
-    if terminator_pos > 0 and terminator_pos < len(content) - 2:
+    if terminator_pos > 0 and terminator_pos < file_size - 2:
         appended_data = content[terminator_pos + 2:]
         appended_str = appended_data.decode(errors='ignore', encoding='latin-1')
         
-        # Analyze appended data more thoroughly
-        if len(appended_data) > 10:  # Only if there's significant appended data
-            # === 1. Detect base64 strings in appended data ===
-            base64_matches = re.findall(r'(?:[A-Za-z0-9+/]{30,}={0,2})', appended_str)
-            for match in base64_matches:
+        if len(appended_data) > 0:  # Any appended data is suspicious
+            # Base64 detection in appended data
+            base64_pattern = r'(?:[A-Za-z0-9+/]{20,}={0,2})'
+            base64_matches = re.findall(base64_pattern, appended_str)
+            for match in base64_matches[:10]:  # Check up to 10 matches
                 try:
                     decoded = base64.b64decode(match).decode('utf-8', errors='ignore')
-                    # Only flag if decoded content looks like code/commands
-                    if any(s in decoded.lower() for s in ['cmd', 'powershell', 'http', 'bash', 'wget', 'curl', 'exec', 'eval', 'system', 'shell']):
-                        findings.append({
-                            'type': 'base64_payload',
-                            'location': 'appended_data',
-                            'encoded': match[:50] + '...' if len(match) > 50 else match,
-                            'decoded': decoded[:200] + '...' if len(decoded) > 200 else decoded
-                        })
+                    if decoded and len(decoded) > 5:  # Valid decoded content
+                        # Check if decoded content contains suspicious keywords
+                        suspicious_keywords = ['cmd', 'powershell', 'http', 'bash', 'wget', 'curl', 'exec', 'eval', 
+                                             'system', 'shell', 'python', 'perl', 'ruby', 'script', 'payload', 'malware']
+                        if any(keyword in decoded.lower() for keyword in suspicious_keywords):
+                            findings.append({
+                                'type': 'base64_payload',
+                                'location': f'appended_data (offset: {terminator_pos + 2})',
+                                'encoded': match[:80] + '...' if len(match) > 80 else match,
+                                'decoded': decoded[:300] + '...' if len(decoded) > 300 else decoded
+                            })
                 except Exception:
                     continue
-
-            # === 2. Suspicious code patterns in appended data ===
-            suspicious_patterns = [
-                (r'<\?php.*?\?>', 'php_script'),
-                (r'<script[^>]*>.*?</script>', 'javascript'),
-                (r'\beval\s*\(', 'eval_call'),
-                (r'\bexec\s*\(', 'exec_call'),
-                (r'os\.system\s*\(', 'system_call'),
-                (r'cmd\.exe\s+/c', 'cmd_execution'),
-                (r'powershell\s+-[eE]', 'powershell_encoded'),
-                (r'bash\s+-[ic]', 'bash_execution'),
-                (r'curl\s+http', 'curl_download'),
-                (r'wget\s+http', 'wget_download'),
-                (r'rm\s+-rf\s+/', 'dangerous_rm'),
-            ]
-
-            for pat, pat_type in suspicious_patterns:
-                matches = re.findall(pat, appended_str, re.IGNORECASE | re.DOTALL)
-                for m in matches[:3]:  # Limit to first 3 matches
+    
+    # === 2. SCAN ENTIRE FILE FOR CODE PATTERNS ===
+    # Comprehensive pattern matching across the entire file
+    suspicious_patterns = [
+        (r'<\?php\s+.*?\?>', 'php_script', re.IGNORECASE | re.DOTALL),
+        (r'<script[^>]*>.*?</script>', 'javascript', re.IGNORECASE | re.DOTALL),
+        (r'<\?=.*?\?>', 'php_short_tag', re.IGNORECASE | re.DOTALL),
+        (r'<%.*?%>', 'asp_script', re.IGNORECASE | re.DOTALL),
+        (r'\beval\s*\(', 'eval_call', re.IGNORECASE),
+        (r'\bexec\s*\(', 'exec_call', re.IGNORECASE),
+        (r'\bexec\s*\(', 'exec_call', re.IGNORECASE),
+        (r'os\.system\s*\(', 'system_call', re.IGNORECASE),
+        (r'subprocess\.', 'subprocess_call', re.IGNORECASE),
+        (r'cmd\.exe\s+/[cC]', 'cmd_execution', re.IGNORECASE),
+        (r'powershell\s+-[eE]', 'powershell_encoded', re.IGNORECASE),
+        (r'powershell\s+-[cC]', 'powershell_command', re.IGNORECASE),
+        (r'bash\s+-[ic]', 'bash_execution', re.IGNORECASE),
+        (r'sh\s+-c\s+', 'shell_execution', re.IGNORECASE),
+        (r'curl\s+https?://', 'curl_download', re.IGNORECASE),
+        (r'wget\s+https?://', 'wget_download', re.IGNORECASE),
+        (r'rm\s+-rf\s+/', 'dangerous_rm', re.IGNORECASE),
+        (r'del\s+/[fFsS]', 'dangerous_del', re.IGNORECASE),
+        (r'format\s+[cC]:', 'format_command', re.IGNORECASE),
+        (r'base64_decode\s*\(', 'base64_decode', re.IGNORECASE),
+        (r'atob\s*\(', 'base64_decode_js', re.IGNORECASE),
+        (r'String\.fromCharCode', 'char_code_obfuscation', re.IGNORECASE),
+        (r'unescape\s*\(', 'unescape_obfuscation', re.IGNORECASE),
+        (r'document\.write\s*\(', 'dom_manipulation', re.IGNORECASE),
+        (r'innerHTML\s*=', 'dom_injection', re.IGNORECASE),
+        (r'\.innerHTML\s*=', 'dom_injection', re.IGNORECASE),
+    ]
+    
+    for pattern, pat_type, flags in suspicious_patterns:
+        matches = re.findall(pattern, content_str, flags)
+        for idx, m in enumerate(matches[:5]):  # Check up to 5 matches per pattern
+            match_str = m.strip() if isinstance(m, str) else str(m).strip()
+            if len(match_str) > 5:  # Only meaningful matches
+                # Find position in file
+                match_pos = content_str.find(match_str)
+                location = f"file_content (offset: {match_pos})" if match_pos >= 0 else "file_content"
+                findings.append({
+                    'type': 'suspicious_pattern',
+                    'pattern_type': pat_type,
+                    'location': location,
+                    'match': match_str[:200] + '...' if len(match_str) > 200 else match_str
+                })
+    
+    # === 3. SCAN FOR BASE64 IN ENTIRE FILE (not just appended) ===
+    # Look for base64 strings throughout the file
+    base64_pattern = r'(?:[A-Za-z0-9+/]{40,}={0,2})'
+    all_base64 = re.findall(base64_pattern, content_str)
+    for b64_match in all_base64[:15]:  # Check up to 15 base64 strings
+        try:
+            decoded = base64.b64decode(b64_match).decode('utf-8', errors='ignore')
+            if decoded and len(decoded) > 10:
+                # Check for executable code patterns in decoded content
+                code_indicators = ['<?php', '<script', 'eval', 'exec', 'system', 'shell', 'cmd', 'powershell', 
+                                 'bash', 'python', 'import', 'require', 'include', 'function', 'class']
+                if any(indicator in decoded.lower() for indicator in code_indicators):
+                    b64_pos = content_str.find(b64_match)
                     findings.append({
-                        'type': 'suspicious_pattern',
-                        'pattern_type': pat_type,
-                        'location': 'appended_data',
-                        'match': m[:100] + '...' if len(m) > 100 else m.strip()
+                        'type': 'base64_payload',
+                        'location': f'file_content (offset: {b64_pos})',
+                        'encoded': b64_match[:80] + '...' if len(b64_match) > 80 else b64_match,
+                        'decoded': decoded[:400] + '...' if len(decoded) > 400 else decoded
                     })
-
-    # === 3. Analyze entire file for high-confidence threats ===
-    # Look for complete malicious code blocks (not just fragments)
-    complete_scripts = re.findall(r'<\?php\s+.*?\?>', content_str, re.IGNORECASE | re.DOTALL)
-    for script in complete_scripts:
-        if any(keyword in script.lower() for keyword in ['eval', 'exec', 'system', 'shell_exec', 'passthru']):
+        except Exception:
+            continue
+    
+    # === 4. SCAN FOR COMPLETE MALICIOUS SCRIPTS ===
+    # PHP scripts
+    php_scripts = re.findall(r'<\?php\s+.*?\?>', content_str, re.IGNORECASE | re.DOTALL)
+    for script in php_scripts:
+        malicious_keywords = ['eval', 'exec', 'system', 'shell_exec', 'passthru', 'assert', 'preg_replace', 
+                            'create_function', 'call_user_func', 'file_get_contents', 'file_put_contents']
+        if any(keyword in script.lower() for keyword in malicious_keywords):
+            script_pos = content_str.find(script)
             findings.append({
                 'type': 'complete_malicious_script',
-                'location': 'file_content',
-                'match': script[:300] + '...' if len(script) > 300 else script
+                'location': f'file_content (offset: {script_pos})',
+                'match': script[:500] + '...' if len(script) > 500 else script
             })
-
-    # === 4. URLs and IPs (only if in suspicious context) ===
-    # Only flag URLs/IPs if they appear with other suspicious content
-    if findings:  # Only check URLs if we already found something suspicious
-        urls = re.findall(r'https?://[^\s\'"<>]+', content_str)
-        for url in urls[:5]:  # Limit to first 5
-            # Skip common image hosting URLs that might be in metadata
-            if not any(domain in url.lower() for domain in ['imgur.com', 'giphy.com', 'tenor.com', 'gstatic.com']):
-                findings.append({'type': 'suspicious_url', 'match': url})
-
-    # === Return summarized result ===
+    
+    # JavaScript scripts
+    js_scripts = re.findall(r'<script[^>]*>.*?</script>', content_str, re.IGNORECASE | re.DOTALL)
+    for script in js_scripts:
+        js_keywords = ['eval', 'exec', 'document.write', 'innerHTML', 'Function', 'setTimeout', 'setInterval',
+                      'XMLHttpRequest', 'fetch', 'atob', 'unescape', 'String.fromCharCode']
+        if any(keyword in script.lower() for keyword in js_keywords):
+            script_pos = content_str.find(script)
+            findings.append({
+                'type': 'complete_malicious_script',
+                'location': f'file_content (offset: {script_pos})',
+                'match': script[:500] + '...' if len(script) > 500 else script
+            })
+    
+    # === 5. SCAN FOR URLS AND IP ADDRESSES ===
+    # URLs (check all, not just when other findings exist)
+    urls = re.findall(r'https?://[^\s\'"<>\)]+', content_str)
+    for url in urls[:10]:  # Check up to 10 URLs
+        # Skip common legitimate image hosting domains
+        if not any(domain in url.lower() for domain in ['imgur.com', 'giphy.com', 'tenor.com', 'gstatic.com', 
+                                                         'googleapis.com', 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com']):
+            url_pos = content_str.find(url)
+            findings.append({
+                'type': 'suspicious_url',
+                'location': f'file_content (offset: {url_pos})',
+                'match': url
+            })
+    
+    # IP addresses
+    ip_pattern = r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b'
+    ips = re.findall(ip_pattern, content_str)
+    for ip in ips[:5]:  # Check up to 5 IPs
+        # Skip common localhost/private IPs unless in suspicious context
+        if ip not in ['127.0.0.1', '0.0.0.0', '255.255.255.255']:
+            ip_pos = content_str.find(ip)
+            findings.append({
+                'type': 'ip_address',
+                'location': f'file_content (offset: {ip_pos})',
+                'match': ip
+            })
+    
+    # === 6. SCAN FOR HEX-ENCODED STRINGS ===
+    # Look for hex-encoded payloads (common obfuscation)
+    hex_pattern = r'\\x[0-9a-fA-F]{2}'
+    hex_sequences = re.findall(r'(?:\\x[0-9a-fA-F]{2}){10,}', content_str)
+    for hex_seq in hex_sequences[:5]:
+        try:
+            # Try to decode hex sequence
+            hex_bytes = bytes.fromhex(hex_seq.replace('\\x', ''))
+            decoded_hex = hex_bytes.decode('utf-8', errors='ignore')
+            if any(keyword in decoded_hex.lower() for keyword in ['eval', 'exec', 'system', 'cmd', 'shell']):
+                hex_pos = content_str.find(hex_seq)
+                findings.append({
+                    'type': 'hex_encoded_payload',
+                    'location': f'file_content (offset: {hex_pos})',
+                    'match': hex_seq[:100] + '...' if len(hex_seq) > 100 else hex_seq
+                })
+        except Exception:
+            continue
+    
+    # === 7. SCAN FOR COMMENT-BASED PAYLOADS ===
+    # GIF comments can contain payloads
+    comment_patterns = [
+        r'<!--.*?-->',  # HTML comments
+        r'/\*.*?\*/',   # C-style comments
+        r'//.*?$',      # Single-line comments
+    ]
+    for pattern in comment_patterns:
+        comments = re.findall(pattern, content_str, re.IGNORECASE | re.DOTALL | re.MULTILINE)
+        for comment in comments:
+            if any(keyword in comment.lower() for keyword in ['eval', 'exec', 'script', 'payload', 'malware', 'exploit']):
+                comment_pos = content_str.find(comment)
+                findings.append({
+                    'type': 'comment_payload',
+                    'location': f'file_content (offset: {comment_pos})',
+                    'match': comment[:300] + '...' if len(comment) > 300 else comment
+                })
+    
+    # === Return comprehensive result ===
     if findings:
-        readable = "=== POTENTIAL THREATS DETECTED ===\n"
+        readable = f"=== COMPREHENSIVE SCAN RESULTS ({len(findings)} findings) ===\n"
+        readable += f"File Size: {file_size} bytes\n"
+        readable += f"Scanned: Entire file (0 to {file_size} bytes)\n\n"
+        
+        # Group findings by type
+        by_type = {}
         for item in findings:
-            if item['type'] == 'base64_payload':
-                readable += f"\n[Base64 Payload - {item.get('location', 'unknown')}]\n"
-                readable += f"Encoded: {item['encoded']}\n"
-                readable += f"Decoded: {item['decoded']}\n"
-            elif item['type'] == 'complete_malicious_script':
-                readable += f"\n[Complete Malicious Script - {item.get('location', 'unknown')}]\n"
-                readable += f"{item['match']}\n"
-            else:
-                readable += f"\n[{item.get('pattern_type', item['type']).upper()} - {item.get('location', 'unknown')}]\n"
-                readable += f"{item['match']}\n"
+            item_type = item.get('pattern_type', item['type'])
+            if item_type not in by_type:
+                by_type[item_type] = []
+            by_type[item_type].append(item)
+        
+        for item_type, items in by_type.items():
+            readable += f"\n--- {item_type.upper().replace('_', ' ')} ({len(items)} found) ---\n"
+            for item in items:
+                if item['type'] == 'base64_payload':
+                    readable += f"\nLocation: {item.get('location', 'unknown')}\n"
+                    readable += f"Encoded: {item['encoded']}\n"
+                    readable += f"Decoded: {item['decoded']}\n"
+                else:
+                    readable += f"\nLocation: {item.get('location', 'unknown')}\n"
+                    readable += f"Match: {item['match']}\n"
+        
         return "suspicious", readable.strip()
     else:
-        return "clean", "No malicious patterns detected. File structure appears normal."
+        return "clean", f"Comprehensive scan completed. File size: {file_size} bytes. No malicious patterns detected in any section of the file."
 
 
 def analyze_file(gif_path, api_key=None):
@@ -196,16 +370,28 @@ def analyze_file(gif_path, api_key=None):
         except Exception as e:
             gif_info["error"] = str(e)
         
-        # Extract text patterns from binary content
-        content_str = gif_content.decode(errors='ignore')
+        # Extract text patterns from binary content (decode entire file for comprehensive scan)
+        content_str = gif_content.decode(errors='ignore', encoding='latin-1')
         file_size = len(gif_content)
         
-        # Look for suspicious patterns with detailed extraction
+        # Comprehensive payload extraction - scans ENTIRE file (no sections skipped)
         suspicious_findings = extract_payload(gif_content)
         
-        # Extract hex representation for analysis (first 1000 bytes in hex)
-        hex_content = gif_content[:1000].hex()
-        hex_pairs = ' '.join([hex_content[i:i+2] for i in range(0, min(len(hex_content), 200), 2)])
+        # Extract hex representation for analysis (sample from beginning, middle, and end)
+        hex_samples = []
+        # Beginning
+        hex_start = gif_content[:500].hex()
+        hex_samples.append(f"Start (0-500): {' '.join([hex_start[i:i+2] for i in range(0, min(len(hex_start), 100), 2)])}")
+        # Middle
+        if file_size > 1000:
+            mid_start = file_size // 2 - 250
+            hex_mid = gif_content[mid_start:mid_start+500].hex()
+            hex_samples.append(f"Middle ({mid_start}-{mid_start+500}): {' '.join([hex_mid[i:i+2] for i in range(0, min(len(hex_mid), 100), 2)])}")
+        # End
+        if file_size > 500:
+            hex_end = gif_content[-500:].hex()
+            hex_samples.append(f"End ({file_size-500}-{file_size}): {' '.join([hex_end[i:i+2] for i in range(0, min(len(hex_end), 100), 2)])}")
+        hex_pairs = '\n'.join(hex_samples)
         
         # Analyze file structure - check for valid GIF header
         has_valid_gif_header = gif_content[:6] == b'GIF89a' or gif_content[:6] == b'GIF87a'
@@ -245,11 +431,18 @@ EXTRACTED PATTERNS FROM FILE:
 SUSPICIOUS READABLE STRINGS FOUND:
 {chr(10).join(suspicious_strings[:20]) if suspicious_strings else 'None found - file appears to contain only normal GIF data'}
 
-FILE CONTENT ANALYSIS (Readable text portions, first 3000 characters):
-{content_str[:3000] if len(content_str) > 0 else 'No readable text content found'}
+FILE CONTENT ANALYSIS (Readable text portions - comprehensive scan):
+- Beginning (first 2000 chars): {content_str[:2000] if len(content_str) > 0 else 'No readable text'}
+- Middle section: {content_str[file_size//2:file_size//2+2000] if file_size > 4000 else 'N/A'}
+- End section (last 2000 chars): {content_str[-2000:] if len(content_str) > 2000 else content_str}
 
-HEX ANALYSIS (First 200 bytes for structure verification):
+HEX ANALYSIS (Samples from beginning, middle, and end):
 {hex_pairs}
+
+COMPLETE FILE SCAN STATUS:
+- Total bytes scanned: {file_size}
+- Scan coverage: 100% (entire file analyzed)
+- Sections analyzed: Header, Metadata, Image Data, Comments, Appended Data
 
 ANALYSIS INSTRUCTIONS:
 1. First, verify this is a valid GIF file structure
@@ -307,14 +500,43 @@ Respond in JSON format:
             response_text = str(response).strip()
         
         # Try to parse JSON from response
-        # Sometimes response wraps JSON in markdown code blocks
+        # Handle various formats: markdown code blocks, plain JSON, or JSON embedded in text
         if isinstance(response_text, str):
+            # Remove markdown code blocks
             if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
+                parts = response_text.split("```json")
+                if len(parts) > 1:
+                    response_text = parts[1].split("```")[0].strip()
             elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
+                parts = response_text.split("```")
+                # Find the JSON block (usually the longest code block)
+                json_blocks = [p.strip() for p in parts[1::2] if p.strip().startswith('{')]
+                if json_blocks:
+                    response_text = json_blocks[0]
+            
+            # Try to extract JSON object from text if it's embedded
+            if not response_text.strip().startswith('{'):
+                # Look for JSON object in the text
+                json_start = response_text.find('{')
+                if json_start >= 0:
+                    # Find the matching closing brace
+                    brace_count = 0
+                    json_end = json_start
+                    for i in range(json_start, len(response_text)):
+                        if response_text[i] == '{':
+                            brace_count += 1
+                        elif response_text[i] == '}':
+                            brace_count -= 1
+                            if brace_count == 0:
+                                json_end = i + 1
+                                break
+                    if json_end > json_start:
+                        response_text = response_text[json_start:json_end]
         else:
             response_text = str(response_text)
+        
+        # Clean up response text - remove any leading/trailing non-JSON text
+        response_text = response_text.strip()
         
         try:
             result = json.loads(response_text)
@@ -364,36 +586,130 @@ Respond in JSON format:
                 "extracted_payload": extracted_payload
             }
         except json.JSONDecodeError as e:
-            # If JSON parsing fails, try to extract information from text more intelligently
+            # If JSON parsing fails, try to extract JSON object more aggressively
+            # Look for JSON-like structure and try to fix common issues
+            json_candidates = []
+            
+            # Try to find JSON object boundaries
+            start_idx = response_text.find('{')
+            if start_idx >= 0:
+                # Try multiple strategies to extract valid JSON
+                strategies = [
+                    # Strategy 1: Extract from first { to last }
+                    lambda: response_text[start_idx:response_text.rfind('}') + 1],
+                    # Strategy 2: Extract first complete JSON object
+                    lambda: _extract_json_object(response_text, start_idx),
+                    # Strategy 3: Try to fix common JSON issues
+                    lambda: _fix_json_string(response_text[start_idx:])
+                ]
+                
+                for strategy in strategies:
+                    try:
+                        candidate = strategy()
+                        if candidate and candidate.strip().startswith('{'):
+                            result = json.loads(candidate)
+                            json_candidates.append(result)
+                            break
+                    except:
+                        continue
+            
+            # If we found a valid JSON candidate, use it
+            if json_candidates:
+                result = json_candidates[0]
+                # Process the result normally
+                prediction_raw = result.get("prediction", "clean")
+                if isinstance(prediction_raw, str):
+                    prediction = prediction_raw.lower().strip()
+                else:
+                    prediction = str(prediction_raw).lower().strip()
+                
+                if prediction not in ["infected", "clean"]:
+                    explanation_raw = result.get("explanation", "")
+                    explanation = str(explanation_raw).lower() if explanation_raw else ""
+                    if any(word in explanation for word in ["malicious", "malware", "payload", "threat", "dangerous", "suspicious code"]):
+                        prediction = "infected"
+                    else:
+                        prediction = "clean"
+                
+                extracted_payload_raw = result.get("extracted_payload", "")
+                if isinstance(extracted_payload_raw, str):
+                    extracted_payload = extracted_payload_raw.strip()
+                else:
+                    extracted_payload = str(extracted_payload_raw).strip()
+                
+                if not extracted_payload or extracted_payload == "":
+                    explanation_raw = result.get("explanation", "Analysis completed - no payload extracted")
+                    extracted_payload = str(explanation_raw) if explanation_raw else "Analysis completed - no payload extracted"
+                
+                method_raw = result.get("method", "advanced_analysis")
+                if isinstance(method_raw, str):
+                    method = method_raw.strip()
+                else:
+                    method = str(method_raw).strip()
+                
+                if not method or method == "":
+                    method = "advanced_analysis"
+                
+                return {
+                    "prediction": prediction,
+                    "model_method": method,
+                    "payload_detected": method if prediction == "infected" else "clean",
+                    "extracted_payload": extracted_payload
+                }
+            
+            # If all JSON extraction fails, try to extract information from text
             response_lower = str(response_text).lower() if response_text else ""
             
-            # More careful analysis - look for clear indicators
-            has_clear_threat = any(phrase in response_lower for phrase in [
-                "malicious code", "malware detected", "infected file", "payload found",
-                "suspicious script", "executable code", "malicious payload"
-            ])
+            # Extract prediction from text
+            prediction = "clean"
+            if '"prediction"' in response_text or "'prediction'" in response_text:
+                # Try to extract prediction value
+                pred_match = re.search(r'["\']prediction["\']\s*:\s*["\']([^"\']+)["\']', response_text, re.IGNORECASE)
+                if pred_match:
+                    prediction = pred_match.group(1).lower().strip()
             
-            has_clear_clean = any(phrase in response_lower for phrase in [
-                "clean file", "no malicious", "safe file", "normal gif", "no threat",
-                "no payload", "legitimate file"
-            ])
+            # Extract method
+            method = "advanced_analysis"
+            if '"method"' in response_text or "'method'" in response_text:
+                method_match = re.search(r'["\']method["\']\s*:\s*["\']([^"\']+)["\']', response_text, re.IGNORECASE)
+                if method_match:
+                    method = method_match.group(1).strip()
             
-            if has_clear_threat and not has_clear_clean:
-                prediction = "infected"
-            elif has_clear_clean and not has_clear_threat:
-                prediction = "clean"
-            else:
-                # Ambiguous - default to clean to avoid false positives
-                prediction = "clean"
+            # Extract payload
+            extracted_payload = response_text
+            if '"extracted_payload"' in response_text or "'extracted_payload'" in response_text:
+                payload_match = re.search(r'["\']extracted_payload["\']\s*:\s*["\']([^"\']+)["\']', response_text, re.IGNORECASE | re.DOTALL)
+                if payload_match:
+                    extracted_payload = payload_match.group(1).strip()
+            elif '"explanation"' in response_text or "'explanation'" in response_text:
+                expl_match = re.search(r'["\']explanation["\']\s*:\s*["\']([^"\']+)["\']', response_text, re.IGNORECASE | re.DOTALL)
+                if expl_match:
+                    extracted_payload = expl_match.group(1).strip()
             
-            # Safely truncate response_text for display
-            response_display = str(response_text)[:500] if response_text else "No response text available"
+            # Fallback: analyze text for indicators
+            if prediction not in ["infected", "clean"]:
+                has_clear_threat = any(phrase in response_lower for phrase in [
+                    "malicious code", "malware detected", "infected file", "payload found",
+                    "suspicious script", "executable code", "malicious payload", '"prediction": "infected"'
+                ])
+                
+                has_clear_clean = any(phrase in response_lower for phrase in [
+                    "clean file", "no malicious", "safe file", "normal gif", "no threat",
+                    "no payload", "legitimate file", '"prediction": "clean"'
+                ])
+                
+                if has_clear_threat and not has_clear_clean:
+                    prediction = "infected"
+                elif has_clear_clean and not has_clear_threat:
+                    prediction = "clean"
+                else:
+                    prediction = "clean"
             
             return {
                 "prediction": prediction,
-                "model_method": "advanced_analysis",
-                "payload_detected": "pattern_detected" if prediction == "infected" else "clean",
-                "extracted_payload": f"Analysis response (JSON parsing failed): {response_display}"
+                "model_method": method,
+                "payload_detected": method if prediction == "infected" else "clean",
+                "extracted_payload": extracted_payload[:2000] if len(extracted_payload) > 2000 else extracted_payload
             }
             
     except Exception as e:

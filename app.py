@@ -192,17 +192,23 @@ def download_report():
         flash("No scan history to export!", "warning")
         return redirect(url_for("index"))
     csv_path = "scan_report.csv"
-    with open(csv_path, mode='w', newline='') as file:
+    # Use UTF-8 encoding with BOM for Excel compatibility, handle encoding errors
+    with open(csv_path, mode='w', newline='', encoding='utf-8-sig', errors='replace') as file:
         writer = csv.writer(file)
         writer.writerow(["File Name", "Status", "Detection Method", "Extracted Payload"])
         for entry in scan_history:
+            # Clean and encode payload to handle special characters
+            payload = entry.get("payload", "")
+            if payload:
+                # Replace problematic characters that can't be encoded
+                payload = str(payload).encode('utf-8', errors='replace').decode('utf-8', errors='replace')
             writer.writerow([
-                entry["file_name"],
-                entry["status"],
-                entry["method"],
-                entry["payload"]
+                entry.get("file_name", ""),
+                entry.get("status", ""),
+                entry.get("method", ""),
+                payload
             ])
-    return send_file(csv_path, as_attachment=True)
+    return send_file(csv_path, as_attachment=True, mimetype='text/csv; charset=utf-8')
 
 # === FORGOT PASSWORD ===
 @app.route("/forgot_password", methods=["GET", "POST"])
