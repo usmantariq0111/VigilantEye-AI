@@ -349,5 +349,11 @@ def embed_demo():
         username=session.get('username')
     )
 
+# === EMBEDDING METHODS INFORMATION PAGE ===
+@app.route("/embedding-info")
+def embedding_info():
+    """Professional information page about embedding methods"""
+    return render_template("embedding_info.html", username=session.get('username'))
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
