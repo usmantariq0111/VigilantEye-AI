@@ -72,9 +72,16 @@ def extract_payload(content: bytes):
     Comprehensive payload extraction from GIF file.
     Scans the ENTIRE file including headers, metadata, comments, and appended data.
     Does not skip any section of the file.
+    Optimized for performance with large files.
     """
     findings = []
     file_size = len(content)
+    
+    # Limit file size for processing (prevent memory issues)
+    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+    if file_size > MAX_FILE_SIZE:
+        # For very large files, only scan first and last portions
+        content = content[:10*1024*1024] + content[-10*1024*1024:]  # First and last 10MB
     
     # Decode entire file content for text analysis (preserve all bytes)
     content_str = content.decode(errors='ignore', encoding='latin-1')

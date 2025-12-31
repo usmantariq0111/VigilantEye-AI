@@ -137,21 +137,40 @@ def embed_payload_lsb(gif_path, payload_text, output_path):
     Method 4: LSB (Least Significant Bit) Steganography
     Hides payload in the least significant bits of pixel data.
     Note: This is a simplified version for demonstration.
+    Optimized for memory efficiency.
     """
     try:
+        # Limit payload size to prevent memory issues
+        MAX_PAYLOAD_SIZE = 10000  # 10KB max for LSB
+        if len(payload_text) > MAX_PAYLOAD_SIZE:
+            payload_text = payload_text[:MAX_PAYLOAD_SIZE]
+        
         img = Image.open(gif_path)
         frames = []
         payload_bits = ''.join(format(ord(c), '08b') for c in payload_text)
         payload_bits += '1111111111111110'  # End marker
         
         bit_index = 0
+        frame_count = 0
+        MAX_FRAMES = 50  # Limit frames to prevent memory issues
+        
         for frame in ImageSequence.Iterator(img):
+            if frame_count >= MAX_FRAMES:
+                break  # Limit processing to prevent memory issues
+                
             frame = frame.convert('RGB')
             pixels = list(frame.getdata())
             
             if bit_index < len(payload_bits):
                 new_pixels = []
+                pixel_count = 0
+                MAX_PIXELS_PER_FRAME = 100000  # Limit pixels per frame
+                
                 for pixel in pixels:
+                    if pixel_count >= MAX_PIXELS_PER_FRAME:
+                        new_pixels.append(pixel)
+                        continue
+                        
                     if bit_index < len(payload_bits):
                         r, g, b = pixel
                         # Modify LSB of red channel
@@ -161,21 +180,28 @@ def embed_payload_lsb(gif_path, payload_text, output_path):
                             g = (g & 0xFE) | int(payload_bits[bit_index])
                             bit_index += 1
                         new_pixels.append((r, g, b))
+                        pixel_count += 1
                     else:
                         new_pixels.append(pixel)
                 frame.putdata(new_pixels)
             
             frames.append(frame)
+            frame_count += 1
         
-        # Save as GIF
+        # Save as GIF with optimization
         if frames:
             frames[0].save(
                 output_path,
                 save_all=True,
                 append_images=frames[1:],
                 duration=img.info.get('duration', 100),
-                loop=img.info.get('loop', 0)
+                loop=img.info.get('loop', 0),
+                optimize=True  # Optimize GIF size
             )
+        
+        # Clean up
+        img.close()
+        del frames
         
         return {
             'method': 'lsb_steganography',
