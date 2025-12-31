@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VigilantEye - Malware Detection</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="alternate icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('home') }}">
+      <i class="bi bi-shield-check"></i>
+      <span>VigilantEye</span>
+    </a>
+    <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-2">
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Switch Theme">
+        <i class="bi bi-moon-fill"></i>
+      </button>
+      {% if session.get('username') %}
+      <a href="{{ url_for('embed_demo') }}" class="nav-link-btn" title="Embedding Demo">
+        <i class="bi bi-code-slash"></i>
+        <span class="d-none d-md-inline">Embed Demo</span>
+      </a>
+      {% endif %}
+      <a href="{{ url_for('about') }}" class="nav-link-btn" title="About">
+        <i class="bi bi-info-circle"></i>
+        <span class="d-none d-md-inline">About</span>
+      </a>
+      {% if session.get('username') %}
+        <div class="user-menu">
+          <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu()">
+            <i class="bi bi-person-circle"></i>
+            <span class="d-none d-md-inline">{{ session['username'] }}</span>
+            <i class="bi bi-chevron-down ms-1"></i>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-dropdown-header">
+              <i class="bi bi-person-circle"></i>
+              <div>
+                <strong>{{ session['username'] }}</strong>
+                <small>Logged in</small>
+              </div>
+            </div>
+            <div class="user-dropdown-divider"></div>
+            <a href="{{ url_for('logout') }}" class="user-dropdown-item">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Logout</span>
+            </a>
+          </div>
+        </div>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="nav-link-btn">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <span class="d-none d-md-inline">Login</span>
+        </a>
+        <a href="{{ url_for('signup') }}" class="nav-link-btn nav-link-btn-primary">
+          <i class="bi bi-person-plus"></i>
+          <span class="d-none d-md-inline">Sign Up</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-3 px-md-4">
+  <div class="row g-4">
+    <!-- Main Content Area -->
+    <div class="col-lg-8 col-xl-9">
+      <div class="card position-relative main-scan-card">
+    <div class="text-center mb-4">
+      <h1 class="logo">
+        <i class="bi bi-shield-check"></i> VigilantEye
+      </h1>
+      <p style="color: var(--text-secondary);" class="fs-5">Advanced AI-Powered GIF Malware Detection</p>
+      <p style="color: var(--text-secondary);">Upload your GIF file to scan for hidden threats and malicious payloads</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+      <!-- Model Selection -->
+      <div class="model-selection mb-4">
+        <label class="form-label" style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem;">
+          <i class="bi bi-cpu"></i> Select Detection Engine
+        </label>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <input type="radio" class="btn-check" name="model_type" id="model_cnn" value="cnn" checked>
+            <label class="btn btn-outline-primary model-card" for="model_cnn">
+              <div class="model-card-content">
+                <i class="bi bi-shield-shaded model-icon"></i>
+                <div class="model-name">Neural Guardian</div>
+                <div class="model-desc">Deep Learning Model</div>
+                <small class="model-badge">AI Engine</small>
+              </div>
+            </label>
+          </div>
+          <div class="col-md-6">
+            <input type="radio" class="btn-check" name="model_type" id="model_llm" value="llm">
+            <label class="btn btn-outline-primary model-card" for="model_llm">
+              <div class="model-card-content">
+                <i class="bi bi-brain model-icon"></i>
+                <div class="model-name">Intelligence Analyst</div>
+                <div class="model-desc">Advanced Pattern Recognition</div>
+                <small class="model-badge">AI Engine</small>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-area" 
+           onclick="document.querySelector('input[type=file]').click()"
+           ondrop="handleDrop(event)" 
+           ondragover="handleDragOver(event)" 
+           ondragleave="handleDragLeave(event)">
+        <div class="upload-icon">
+          <i class="bi bi-cloud-upload"></i>
+        </div>
+        <h5 style="color: var(--text-primary);" class="mb-3">Drag & Drop or Click to Upload</h5>
+        <p style="color: var(--text-secondary);" class="mb-3">Supported format: .gif files only</p>
+        <input type="file" class="form-control d-none" name="gif_file" accept=".gif" required id="fileInput" onchange="updateFileName(this)">
+        <div id="fileName" class="text-primary mt-2"></div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100 mt-4" id="scanBtn">
+        <i class="bi bi-search"></i> Scan for Malware
+      </button>
+    </form>
+
+
+    {% if result %}
+    <div class="result-box mt-4 {% if result[0] == 'infected' %}bg-danger{% elif result[0] == 'clean' %}bg-success{% else %}bg-warning{% endif %}">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h4 class="mb-0">
+          <i class="bi bi-{% if result[0] == 'infected' %}exclamation-triangle-fill{% elif result[0] == 'clean' %}check-circle-fill{% else %}exclamation-circle-fill{% endif %}"></i>
+          Scan Result
+        </h4>
+        <span class="status-badge {% if result[0] == 'infected' %}infected{% elif result[0] == 'clean' %}clean{% else %}warning{% endif %}">
+          {{ result[0].upper() }}
+        </span>
+      </div>
+
+      <div class="mb-3">
+        <strong style="color: var(--text-secondary);">File:</strong>
+        <code class="ms-2">{{ file_name }}</code>
+      </div>
+
+      {% if result and result|length > 3 %}
+      <div class="mb-3">
+        <strong style="color: var(--text-secondary);">Detection Engine:</strong>
+        <span class="ms-2 model-badge-result">
+          {% if result[3] == 'cnn' %}
+            <i class="bi bi-shield-shaded"></i> Neural Guardian
+          {% else %}
+            <i class="bi bi-brain"></i> Intelligence Analyst
+          {% endif %}
+        </span>
+      </div>
+      {% endif %}
+
+      {% if file_name %}
+      <div class="text-center my-4 gif-preview">
+        <img src="{{ url_for('static', filename='uploads/' + file_name) }}" 
+             alt="Scanned GIF"
+             class="img-fluid rounded"
+             style="max-height: 300px;">
+      </div>
+      {% endif %}
+
+      <div class="row g-3 mt-3">
+        <div class="col-md-6">
+          <div class="p-3 rounded" style="background: var(--bg-overlay);">
+            <small style="color: var(--text-secondary);" class="d-block mb-1">Detection Method</small>
+            <strong class="d-block">
+              <span class="method-badge">{{ result[1] }}</span>
+            </strong>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="p-3 rounded" style="background: var(--bg-overlay);">
+            <small style="color: var(--text-secondary);" class="d-block mb-1">Status</small>
+            <strong class="d-block" style="color: {% if result[0] == 'infected' %}var(--danger-color){% elif result[0] == 'clean' %}var(--success-color){% else %}var(--warning-color){% endif %};">
+              {{ result[0].upper() }}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {% if payload %}
+      <div class="mt-4">
+        <h6 class="mb-2">
+          <i class="bi bi-code-slash"></i> Extracted Payload:
+        </h6>
+        <pre class="p-3 rounded" style="background: var(--bg-overlay);">{{ payload }}</pre>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+      </div>
+    </div>
+
+    <!-- History Sidebar -->
+    <div class="col-lg-4 col-xl-3">
+      <div class="card history-sidebar sticky-top">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0" style="color: var(--text-primary);">
+            <i class="bi bi-clock-history"></i> Scan History
+          </h5>
+          <button class="btn btn-sm btn-outline-info d-lg-none" id="toggleHistory" onclick="toggleHistorySidebar()" title="Toggle History">
+            <i class="bi bi-list" id="toggleHistoryIcon"></i>
+          </button>
+        </div>
+
+        {% if history %}
+        <div class="history-sidebar-content" id="historyContent">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <small style="color: var(--text-secondary);">{{ history|length }} scan(s)</small>
+            <a href="{{ url_for('download_report') }}" class="btn btn-sm btn-warning" title="Download CSV Report">
+              <i class="bi bi-download"></i>
+            </a>
+          </div>
+
+          <div class="history-list">
+            {% for entry in history %}
+            <div class="history-item {% if entry.status == 'infected' %}infected-item{% elif entry.status == 'clean' %}clean-item{% endif %}">
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <div class="history-status-icon">
+                  <i class="bi bi-{% if entry.status == 'infected' %}exclamation-triangle-fill text-danger{% elif entry.status == 'clean' %}check-circle-fill text-success{% else %}exclamation-circle-fill text-warning{% endif %}"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <code class="history-filename">{{ entry.file_name }}</code>
+                    <span class="status-badge-small {% if entry.status == 'infected' %}infected{% elif entry.status == 'clean' %}clean{% else %}warning{% endif %}">
+                      {{ entry.status.upper() }}
+                    </span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <small style="color: var(--text-secondary);">
+                      <i class="bi bi-tag"></i> {{ entry.method }}
+                    </small>
+                    {% if entry.model_type %}
+                    <small class="model-badge-result" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">
+                      {% if entry.model_type == 'cnn' %}
+                        <i class="bi bi-shield-shaded"></i> Neural Guardian
+                      {% else %}
+                        <i class="bi bi-brain"></i> Intelligence Analyst
+                      {% endif %}
+                    </small>
+                    {% endif %}
+                  </div>
+                  {% if entry.payload %}
+                  <details class="history-details">
+                    <summary style="cursor: pointer; color: var(--primary-color); font-size: 0.85rem;">
+                      <i class="bi bi-chevron-down"></i> View Payload
+                    </summary>
+                    <pre class="history-payload">{{ entry.payload }}</pre>
+                  </details>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="history-empty text-center py-4">
+          <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5;"></i>
+          <p style="color: var(--text-secondary);" class="mt-3 mb-0">No scan history yet</p>
+          <small style="color: var(--text-tertiary);">Scan files to see history here</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay - Fixed to viewport -->
+<div class="loading-wrapper">
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-container">
+      <div class="shield-loader">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="shieldGradientLoader" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:var(--primary-color);stop-opacity:1" />
+              <stop offset="100%" style="stop-color:var(--secondary-color);stop-opacity:1" />
+            </linearGradient>
+            <radialGradient id="eyeGradient" cx="50%" cy="50%">
+              <stop offset="0%" style="stop-color:var(--primary-color);stop-opacity:1" />
+              <stop offset="100%" style="stop-color:var(--primary-dark);stop-opacity:0.8" />
+            </radialGradient>
+          </defs>
+          <!-- Shield -->
+          <path class="shield-path" d="M50 10 L20 25 L20 45 Q20 65 30 75 Q40 85 50 90 Q60 85 70 75 Q80 65 80 45 L80 25 Z"/>
+          <!-- Scanning Line (moves down) -->
+          <line class="scan-line" x1="25" y1="30" x2="75" y2="30"/>
+          <!-- Eye -->
+          <circle class="eye-circle" cx="50" cy="50" r="10" fill="url(#eyeGradient)"/>
+          <circle cx="50" cy="50" r="5" fill="var(--text-inverse)" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="loading-text">
+        Scanning for Malware
+        <span class="loading-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </div>
+      <div class="loading-subtext">Analyzing GIF file for threats and malicious payloads</div>
+      <div class="loading-progress">
+        <div class="loading-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>&copy; 2025 VigilantEye | AI-Powered Malware Detection | Built with Flask & PyTorch</p>
+</div>
+
+<script>
+  function updateFileName(input) {
+    const fileName = input.files[0]?.name;
+    const fileNameDiv = document.getElementById('fileName');
+    if (fileName) {
+      fileNameDiv.innerHTML = `<i class="bi bi-file-earmark-check"></i> Selected: <strong>${fileName}</strong>`;
+      fileNameDiv.style.color = 'var(--success-color)';
+    }
+  }
+
+  document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const btn = document.getElementById('scanBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingWrapper = document.querySelector('.loading-wrapper');
+    
+    // Show loading overlay and wrapper
+    if (loadingWrapper) {
+      loadingWrapper.classList.add('show');
+    }
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('show');
+    }
+    
+    // Disable button
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Scanning...';
+    
+    // The form will submit normally, and the overlay will be visible during the request
+    // The overlay will be hidden when the page reloads with results
+  });
+
+  // Hide loading overlay if page loads with results (in case of back navigation)
+  window.addEventListener('load', function() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingWrapper = document.querySelector('.loading-wrapper');
+    if (loadingOverlay) {
+      loadingOverlay.classList.remove('show');
+    }
+    if (loadingWrapper) {
+      loadingWrapper.classList.remove('show');
+    }
+  });
+
+  // Toggle history sidebar on mobile
+  function toggleHistorySidebar() {
+    const sidebar = document.querySelector('.history-sidebar');
+    const content = document.getElementById('historyContent');
+    const icon = document.getElementById('toggleHistoryIcon');
+    
+    if (sidebar && content) {
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      
+      if (isCollapsed) {
+        sidebar.classList.remove('collapsed');
+        content.style.display = 'block';
+        icon.classList.remove('bi-list');
+        icon.classList.add('bi-x');
+      } else {
+        sidebar.classList.add('collapsed');
+        content.style.display = 'none';
+        icon.classList.remove('bi-x');
+        icon.classList.add('bi-list');
+      }
+    }
+  }
+
+  // Auto-collapse sidebar on mobile by default
+  window.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth < 992) {
+      const sidebar = document.querySelector('.history-sidebar');
+      const content = document.getElementById('historyContent');
+      if (sidebar && content) {
+        sidebar.classList.add('collapsed');
+        content.style.display = 'none';
+      }
+    }
+  });
+
+  // Handle window resize
+  window.addEventListener('resize', function() {
+    const sidebar = document.querySelector('.history-sidebar');
+    const content = document.getElementById('historyContent');
+    const icon = document.getElementById('toggleHistoryIcon');
+    
+    if (window.innerWidth >= 992) {
+      // Desktop - always show
+      if (sidebar && content) {
+        sidebar.classList.remove('collapsed');
+        content.style.display = 'block';
+        icon.classList.remove('bi-x');
+        icon.classList.add('bi-list');
+      }
+    }
+  });
+
+  // User Menu Toggle
+  function toggleUserMenu() {
+    const dropdown = document.getElementById('userDropdown');
+    const btn = document.getElementById('userMenuBtn');
+    
+    if (dropdown && btn) {
+      dropdown.classList.toggle('show');
+      btn.classList.toggle('active');
+    }
+  }
+
+  // Close user menu when clicking outside
+  document.addEventListener('click', function(event) {
+    const userMenu = document.querySelector('.user-menu');
+    const dropdown = document.getElementById('userDropdown');
+    const btn = document.getElementById('userMenuBtn');
+    
+    if (userMenu && dropdown && btn && !userMenu.contains(event.target)) {
+      dropdown.classList.remove('show');
+      btn.classList.remove('active');
+    }
+  });
+
+  // Drag and Drop Handlers
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.add('dragover');
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('dragover');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].name.endsWith('.gif')) {
+      const fileInput = document.getElementById('fileInput');
+      fileInput.files = files;
+      updateFileName(fileInput);
+    }
+  }
+</script>
+
+</body>
+</html>

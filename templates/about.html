@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About - VigilantEye</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="alternate icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('home') }}">
+      <i class="bi bi-shield-check"></i> VigilantEye
+    </a>
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Switch Theme">
+        <i class="bi bi-moon-fill"></i>
+      </button>
+      {% if session.get('username') %}
+        <span class="d-flex align-items-center gap-2" style="color: var(--text-primary);">
+          <i class="bi bi-person-circle"></i> {{ session['username'] }}
+        </span>
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm">
+          <i class="bi bi-box-arrow-in-right"></i> Login
+        </a>
+        <a href="{{ url_for('signup') }}" class="btn btn-outline-info btn-sm">
+          <i class="bi bi-person-plus"></i> Sign Up
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <div class="text-center mb-5">
+      <h1 class="mb-3">
+        <i class="bi bi-shield-check"></i> About VigilantEye
+      </h1>
+      <p style="color: var(--text-secondary);" class="fs-5">Advanced AI-Powered Malware Detection Platform</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon">
+            <i class="bi bi-shield-fill-check"></i>
+          </div>
+          <h5>AI-Powered Detection</h5>
+          <p class="text-white-50">Advanced CNN-based deep learning models trained to identify malicious patterns in GIF files.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon">
+            <i class="bi bi-speedometer2"></i>
+          </div>
+          <h5>Real-Time Analysis</h5>
+          <p class="text-white-50">Instant scanning and analysis with detailed threat reports and payload extraction.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card text-center">
+          <div class="feature-icon">
+            <i class="bi bi-lock-fill"></i>
+          </div>
+          <h5>Secure Platform</h5>
+          <p class="text-white-50">Enterprise-grade security with user authentication and encrypted data handling.</p>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-5" style="border-color: var(--border-color);">
+
+    <div class="mb-4">
+      <h3 class="mb-4">
+        <i class="bi bi-info-circle"></i> Overview
+      </h3>
+          <p style="color: var(--text-secondary);" class="fs-6 lh-lg">
+        VigilantEye is an AI-powered malware detection platform specifically designed to scan animated GIF files for hidden threats.
+        Cyber attackers are increasingly using steganography to embed malicious payloads inside media files like GIFs. These infected GIFs
+        often bypass traditional antivirus tools undetected.
+      </p>
+          <p style="color: var(--text-secondary);" class="fs-6 lh-lg">
+        Our solution leverages advanced <strong class="text-primary">CNN-based deep learning</strong> to classify whether a GIF is infected or clean. Additionally,
+        it attempts to identify the exact <strong class="text-primary">type of embedded attack or payload</strong> — such as appended JavaScript, shell commands,
+        PHP backdoors, base64-encoded scripts, and more.
+      </p>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="mb-4">
+        <i class="bi bi-list-check"></i> Key Features
+      </h3>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+            <div>
+              <h6>Real-time Analysis</h6>
+              <p style="color: var(--text-secondary);" class="mb-0">Instant scanning of GIF files for suspicious code patterns and malware signatures.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+            <div>
+              <h6>Deep Learning Inference</h6>
+              <p style="color: var(--text-secondary);" class="mb-0">Trained on synthetic malware-injected datasets for accurate threat detection.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+            <div>
+              <h6>Payload Extraction</h6>
+              <p style="color: var(--text-secondary);" class="mb-0">Clear feedback with detected methods and decoded malicious payloads.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+            <div>
+              <h6>Threat Protection</h6>
+              <p style="color: var(--text-secondary);" class="mb-0">Protection against emerging steganographic threats and zero-day attacks.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="mb-4">
+        <i class="bi bi-gear"></i> Technology Stack
+      </h3>
+      <div class="d-flex flex-wrap gap-3">
+        <span class="badge bg-primary px-3 py-2" style="font-size: 0.9rem;">
+          <i class="bi bi-code-slash"></i> Flask
+        </span>
+        <span class="badge bg-primary px-3 py-2" style="font-size: 0.9rem;">
+          <i class="bi bi-cpu"></i> PyTorch
+        </span>
+        <span class="badge bg-primary px-3 py-2" style="font-size: 0.9rem;">
+          <i class="bi bi-diagram-3"></i> CNN
+        </span>
+        <span class="badge bg-primary px-3 py-2" style="font-size: 0.9rem;">
+          <i class="bi bi-bootstrap"></i> Bootstrap 5
+        </span>
+        <span class="badge bg-primary px-3 py-2" style="font-size: 0.9rem;">
+          <i class="bi bi-database"></i> SQLite
+        </span>
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-5">
+      <h5 class="alert-heading" style="color: var(--primary-color);">
+        <i class="bi bi-lightbulb"></i> Academic Project
+      </h5>
+      <p class="mb-0" style="color: var(--text-primary);">
+        This project was developed as part of a final year academic project to explore novel ways of improving digital media security
+        and combating steganographic malware threats.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>&copy; 2025 VigilantEye | Built with Flask & PyTorch | AI-Powered Security</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
