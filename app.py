@@ -108,7 +108,7 @@
 ##########################################################################################################
 
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify, make_response
 import os, sqlite3
 import csv
 import hashlib
@@ -520,7 +520,38 @@ def embed_demo():
 @app.route("/embedding-info")
 def embedding_info():
     """Professional information page about embedding methods"""
-    return render_template("embedding_info.html", username=session.get('username'))
+    response = make_response(render_template("embedding_info.html", username=session.get('username')))
+    # Cache static content page for 1 hour (3600 seconds)
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+@app.route("/method/append")
+def method_append():
+    """Method 1: Append After Terminator"""
+    response = make_response(render_template("method_append.html", username=session.get('username')))
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+@app.route("/method/comment")
+def method_comment():
+    """Method 2: GIF Comment Extension"""
+    response = make_response(render_template("method_comment.html", username=session.get('username')))
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+@app.route("/method/base64")
+def method_base64():
+    """Method 3: Base64 Encoded Append"""
+    response = make_response(render_template("method_base64.html", username=session.get('username')))
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
+
+@app.route("/method/lsb")
+def method_lsb():
+    """Method 4: LSB Steganography"""
+    response = make_response(render_template("method_lsb.html", username=session.get('username')))
+    response.headers['Cache-Control'] = 'public, max-age=3600'
+    return response
 
 # Error handlers
 @app.errorhandler(413)

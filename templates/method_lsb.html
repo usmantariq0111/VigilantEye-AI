@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VigilantEye - LSB Steganography Method</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+  <style>
+    .hex-code {
+      font-family: 'Courier New', monospace;
+      background: var(--bg-overlay);
+      padding: 0.5rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--primary-color);
+      word-break: break-all;
+      overflow-wrap: break-word;
+    }
+    .tech-detail {
+      background: var(--bg-overlay);
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 0.5rem 0;
+      border-left: 3px solid var(--primary-color);
+    }
+    .detection-method {
+      background: var(--bg-card);
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('home') }}">
+      <i class="bi bi-shield-check"></i>
+      <span>VigilantEye</span>
+    </a>
+    <div class="navbar-nav ms-auto d-flex flex-row align-items-center gap-2">
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Switch Theme">
+        <i class="bi bi-moon-fill"></i>
+      </button>
+      <a href="{{ url_for('index') }}" class="nav-link-btn" title="Scan">
+        <i class="bi bi-search"></i>
+        <span class="d-none d-md-inline">Scan</span>
+      </a>
+      <a href="{{ url_for('embed_demo') }}" class="nav-link-btn" title="Embed Demo">
+        <i class="bi bi-code-slash"></i>
+        <span class="d-none d-md-inline">Embed Demo</span>
+      </a>
+      <a href="{{ url_for('embedding_info') }}" class="nav-link-btn nav-link-btn-primary" title="Methods Info">
+        <i class="bi bi-info-circle-fill"></i>
+        <span class="d-none d-md-inline">Methods</span>
+      </a>
+      <a href="{{ url_for('about') }}" class="nav-link-btn" title="About">
+        <i class="bi bi-info-circle"></i>
+        <span class="d-none d-md-inline">About</span>
+      </a>
+      {% if session.get('username') %}
+        <div class="user-menu">
+          <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu()">
+            <i class="bi bi-person-circle"></i>
+            <span class="d-none d-md-inline">{{ session['username'] }}</span>
+            <i class="bi bi-chevron-down ms-1"></i>
+          </button>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-dropdown-header">
+              <i class="bi bi-person-circle"></i>
+              <div>
+                <strong>{{ session['username'] }}</strong>
+                <small>Logged in</small>
+              </div>
+            </div>
+            <div class="user-dropdown-divider"></div>
+            <a href="{{ url_for('logout') }}" class="user-dropdown-item">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Logout</span>
+            </a>
+          </div>
+        </div>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="nav-link-btn">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <span class="d-none d-md-inline">Login</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="mb-4">
+          <a href="{{ url_for('embedding_info') }}" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Methods Overview
+          </a>
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <h1 class="mb-2" style="color: var(--primary-color);">
+                <i class="bi bi-eye-slash"></i> Method 4: LSB Steganography
+              </h1>
+              <p style="color: var(--text-secondary);">Advanced pixel-level data hiding technique</p>
+            </div>
+            <span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">Low Visibility</span>
+          </div>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-gear"></i> Technical Overview
+          </h5>
+          <p style="color: var(--text-primary); line-height: 1.8;">
+            Least Significant Bit (LSB) steganography is an advanced technique that hides payload data within the pixel data itself. 
+            By modifying the least significant bit of color channels (Red, Green, Blue), the payload is distributed across the image 
+            pixels. This method is extremely difficult to detect visually, as the changes are imperceptible to the human eye.
+          </p>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-code-square"></i> How It Works
+          </h5>
+          <ol style="color: var(--text-primary); line-height: 1.8; padding-left: 1.5rem;">
+            <li><strong>Payload Conversion:</strong> Payload text is converted to binary (8 bits per character).</li>
+            <li><strong>Pixel Modification:</strong> For each pixel's RGB values, the LSB (rightmost bit) is replaced with payload bits.</li>
+            <li><strong>Bit Distribution:</strong> Payload bits are distributed across multiple pixels: R channel → bit 1, G channel → bit 2, B channel → bit 3, etc.</li>
+            <li><strong>End Marker:</strong> Special bit sequence (1111111111111110) marks the end of the payload.</li>
+            <li><strong>Frame Processing:</strong> For animated GIFs, payload can be distributed across multiple frames.</li>
+          </ol>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-file-binary"></i> Binary Structure
+          </h5>
+          <pre class="hex-code" style="padding: 1rem; overflow-x: auto;">Pixel RGB Values:
+Original: R=255 (11111111), G=128 (10000000), B=64 (01000000)
+Payload Bit: 1
+
+Modified: R=255 (11111111), G=129 (10000001), B=65 (01000001)
+          ↑ unchanged    ↑ LSB=1      ↑ LSB=1
+
+Example:
+Character: 'A' = 65 = 01000001 (binary)
+Hidden in 3 pixels:
+  Pixel 1: R LSB = 0, G LSB = 1
+  Pixel 2: R LSB = 0, G LSB = 0
+  Pixel 3: R LSB = 0, G LSB = 0
+  Pixel 4: R LSB = 0, G LSB = 0
+  Pixel 5: R LSB = 0, G LSB = 0
+  Pixel 6: R LSB = 0, G LSB = 0
+  Pixel 7: R LSB = 0, G LSB = 1
+  Pixel 8: R LSB = 1, G LSB = 0</pre>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-shield-exclamation"></i> Detection Methods
+          </h5>
+          <div class="detection-method">
+            <strong><i class="bi bi-check-circle"></i> Statistical Analysis:</strong>
+            <p class="mb-0" style="color: var(--text-secondary);">Analyze LSB distribution patterns. Natural images have random LSBs, while steganography creates patterns.</p>
+          </div>
+          <div class="detection-method">
+            <strong><i class="bi bi-check-circle"></i> Chi-Square Test:</strong>
+            <p class="mb-0" style="color: var(--text-secondary);">Statistical test to detect non-random LSB distributions indicating hidden data.</p>
+          </div>
+          <div class="detection-method">
+            <strong><i class="bi bi-check-circle"></i> Visual Inspection:</strong>
+            <p class="mb-0" style="color: var(--text-secondary);">Extract and visualize LSB planes to identify patterns or anomalies.</p>
+          </div>
+          <div class="detection-method">
+            <strong><i class="bi bi-check-circle"></i> Steganalysis Tools:</strong>
+            <p class="mb-0" style="color: var(--text-secondary);">Use specialized tools like StegExpose, StegAlyzerAS, or custom LSB extraction algorithms.</p>
+          </div>
+        </div>
+
+        <div class="tech-detail">
+          <h5 style="color: var(--text-primary); margin-bottom: 1rem;">
+            <i class="bi bi-exclamation-triangle"></i> Security Implications
+          </h5>
+          <ul style="color: var(--text-primary); line-height: 1.8;">
+            <li><strong>High Stealth:</strong> Visually identical to original image, making detection extremely difficult.</li>
+            <li><strong>Capacity Limitations:</strong> Limited by image size. Can hide ~1 bit per pixel (3 bits per RGB pixel).</li>
+            <li><strong>Computational Overhead:</strong> Requires pixel-level processing, more complex than other methods.</li>
+            <li><strong>Advanced Technique:</strong> Requires sophisticated tools and knowledge, less common in basic attacks.</li>
+            <li><strong>Forensic Challenges:</strong> Difficult to detect without specialized steganalysis tools.</li>
+            <li><strong>Execution Barrier:</strong> <span style="color: var(--warning-color);">Even with LSB steganography</span>, the hidden payload cannot execute from the GIF file itself - it requires extraction and external execution mechanisms.</li>
+          </ul>
+        </div>
+
+        <div class="alert alert-warning mt-4" style="background: rgba(255, 193, 7, 0.15); border-left: 4px solid var(--warning-color); color: var(--text-primary);">
+          <h6 style="color: var(--warning-color); margin-bottom: 0.5rem;">
+            <i class="bi bi-exclamation-triangle"></i> Important Note
+          </h6>
+          <p class="mb-0" style="line-height: 1.8;">
+            This method cannot execute payloads directly from the GIF file. Execution requires external triggers such as vulnerable applications, 
+            file processing scripts, or user intervention. Always validate file content and use secure file handling practices.
+          </p>
+        </div>
+
+        <div class="text-center mt-5">
+          <a href="{{ url_for('embedding_info') }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-arrow-left"></i> Back to Overview
+          </a>
+          <a href="{{ url_for('embed_demo') }}" class="btn btn-primary">
+            <i class="bi bi-code-slash"></i> Try Embedding Demo
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>&copy; 2025 VigilantEye | AI-Powered Malware Detection | Built with Flask & PyTorch</p>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    function toggleUserMenu() {
+      const dropdown = document.getElementById('userDropdown');
+      const btn = document.getElementById('userMenuBtn');
+      if (dropdown && btn) {
+        dropdown.classList.toggle('show');
+        btn.classList.toggle('active');
+      }
+    }
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    if (userMenuBtn) {
+      userMenuBtn.addEventListener('click', toggleUserMenu);
+    }
+    let clickTimeout;
+    document.addEventListener('click', function(event) {
+      clearTimeout(clickTimeout);
+      clickTimeout = setTimeout(function() {
+        const userMenu = document.querySelector('.user-menu');
+        const dropdown = document.getElementById('userDropdown');
+        const btn = document.getElementById('userMenuBtn');
+        if (userMenu && dropdown && btn && !userMenu.contains(event.target)) {
+          dropdown.classList.remove('show');
+          btn.classList.remove('active');
+        }
+      }, 10);
+    }, { passive: true });
+  });
+</script>
+
+</body>
+</html>
+
