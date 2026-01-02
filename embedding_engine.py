@@ -286,32 +286,32 @@ def get_llm_explanation(embedding_method, payload_text, embedding_details):
         if selected_model_name:
             print(f"[Embedding Engine] Using model: {selected_model_name}")
         
-        prompt = f"""You are a cybersecurity expert. Provide a CONCISE explanation of this embedding technique.
+        # Keep the output small + structured to avoid wasting tokens/quota.
+        # We intentionally do NOT ask for long explanations or extra sections.
+        prompt = f"""You are a cybersecurity analyst. Return ONLY the following 4 sections, each 1 sentence, with no extra text.
 
-EMBEDDING METHOD: {embedding_method}
-METHOD: {embedding_details.get('description', 'N/A')}
-PAYLOAD SIZE: {embedding_details.get('payload_size', 'N/A')} bytes
-OFFSET: {embedding_details.get('offset', 'N/A')}
+Embedding method: {embedding_method}
+Method description: {embedding_details.get('description', 'N/A')}
+Payload size: {embedding_details.get('payload_size', 'N/A')} bytes
+Offset: {embedding_details.get('offset', 'N/A')}
 
-Provide a BRIEF explanation covering ONLY these key points:
+Format EXACTLY like this:
+Embedding: <one sentence>
+Placement: <one sentence>
+Detection: <one sentence>
+Risk: <one sentence>
 
-1. **What it is**: One sentence explaining {embedding_method} in GIF context
-2. **How it works**: Where payload is placed in GIF structure (1-2 sentences)
-3. **Detection**: How it can be detected (1 sentence)
-4. **Risk**: Why it's dangerous (1 sentence)
-
-IMPORTANT: 
-- Keep response SHORT and TO THE POINT
-- Maximum 4-5 sentences total
-- No verbose explanations or extra details
-- Focus only on essential information
-- Use simple, clear language"""
+Rules:
+- No preface, no conclusion, no bullet points, no markdown
+- Keep it practical and specific to GIF structure
+- Max ~60 words total"""
 
         generation_config = {
-            "temperature": 0.5,  # Balanced for concise yet accurate explanations
-            "top_p": 0.95,
+            "temperature": 0.3,  # Lower temperature for consistent structured output
+            "top_p": 0.9,
             "top_k": 40,
-            "max_output_tokens": 1024,  # Reduced for concise responses - key points only
+            # Hard cap to prevent long responses and reduce token usage/cost.
+            "max_output_tokens": 220,
         }
         
         safety_settings = [
